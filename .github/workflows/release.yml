@@ -8,6 +8,8 @@ on:
 jobs:
   publish:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
 
@@ -19,13 +21,20 @@ jobs:
       - name: Install PRPM
         run: npm install -g prpm
 
+      - name: Configure PRPM authentication
+        run: |
+          cat > ~/.prpmrc << EOF
+          {
+            "registryUrl": "https://registry.prpm.dev",
+            "token": "${{ secrets.PRPM_TOKEN }}"
+          }
+          EOF
+
       - name: Validate package
         run: prpm publish --dry-run
 
       - name: Publish to PRPM
         run: prpm publish
-        env:
-          PRPM_TOKEN: ${{ secrets.PRPM_TOKEN }}
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@153bb8e04406b158c6c84fc1615b65b24149a1fe # v2
