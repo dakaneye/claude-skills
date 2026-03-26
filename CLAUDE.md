@@ -70,17 +70,29 @@ Before pushing:
 
 ## Releasing
 
+See `CONTRIBUTING.md` for full release documentation.
+
 ```bash
 # 1. Update version in prpm.json
 # 2. Commit version bump
 git add prpm.json && git commit -m "chore: bump version to X.Y.Z"
+git push origin main
 
 # 3. Tag and push
-git tag vX.Y.Z
-git push origin main --tags
+git tag -a vX.Y.Z -m "Release vX.Y.Z"
+git push origin vX.Y.Z
 ```
 
 CI will automatically publish to PRPM on tag push.
+
+### Token Expiry
+
+If release fails with auth errors, refresh the PRPM token:
+
+```bash
+prpm login
+gh secret set PRPM_TOKEN --repo dakaneye/claude-review-code < <(jq -r '.token' ~/.prpmrc)
+```
 
 ## File Reference Conventions
 
