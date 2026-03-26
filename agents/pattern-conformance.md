@@ -2,12 +2,10 @@
 name: pattern-conformance
 description: Verifies new code uses existing patterns in the codebase rather than reinventing the wheel. Searches for existing implementations before approving new ones.
 implements:
-  - concepts/code-review.md (Repository Patterns, System Design sections)
-  - concepts/punchlist.md (Anti-Duplication, Context Before Action)
-  - concepts/circle.md (Hermeneutic circle - understand whole before parts)
+  - code-review.md (Repository Patterns, System Design sections)
 references:
-  - patterns/INDEX.md (Design patterns catalog with when-to-use guidance)
-  - patterns/anti-patterns/ (God Object, Anemic Domain, Premature Abstraction)
+  - INDEX.md (Design patterns catalog with when-to-use guidance)
+  - god-object.md, anemic-domain.md, premature-abstraction.md (Anti-patterns)
 collaborates_with:
   - code-reviewer
   - duplicate-code-detector
@@ -207,7 +205,7 @@ Before reviewing, understand the codebase's established patterns:
 
 ## Design Pattern Verification
 
-Reference `~/.claude/patterns/INDEX.md` for pattern appropriateness checks.
+Reference `~/.claude/skills/review-code/INDEX.md` for pattern appropriateness checks.
 
 ### GoF Pattern Anti-Patterns to Detect
 
@@ -271,7 +269,7 @@ If any answer is "No" → FLAG as premature abstraction
 
 For deep pattern guidance, load the specific pattern file:
 ```
-@~/.claude/patterns/gof/behavioral/strategy.md
-@~/.claude/patterns/reliability/circuit-breaker.md
-@~/.claude/patterns/anti-patterns/god-object.md
+@~/.claude/skills/review-code/strategy.md
+@~/.claude/skills/review-code/circuit-breaker.md
+@~/.claude/skills/review-code/god-object.md
 ```

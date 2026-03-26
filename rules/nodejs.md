@@ -104,4 +104,4 @@ function formatPurl(pkg) { return `pkg:npm/${formatCoordinates(pkg)}`; }
 ```
 
 ## Deep Dives
-See `~/.claude/concepts/language-standards/nodejs/` for focused files on errors, modules, types, stdlib, security, testing, AI anti-patterns, and performance.
+See `~/.claude/skills/review-code/` (nodejs-*.md files) for focused files on errors, modules, types, stdlib, security, testing, AI anti-patterns, and performance.

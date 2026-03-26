@@ -101,7 +101,7 @@ for (Order o : orders) {
 - Javadoc on public APIs
 - Unit tests with AssertJ
 
-For deep dives: `~/.claude/concepts/language-standards/java/`
-For pattern guidance: `~/.claude/patterns/INDEX.md`
+For deep dives: `~/.claude/skills/review-code/` (java-*.md files)
+For pattern guidance: `~/.claude/skills/review-code/INDEX.md`
 
 When in doubt, choose the boring solution. Remember Bloch: "When in doubt, leave it out."

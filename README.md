@@ -10,10 +10,14 @@ A comprehensive code review skill with language-specific expertise, truth-focuse
 ### Via PRPM (Recommended)
 
 ```bash
-prpm install @dakaneye/review-code
+prpm install review-code
 ```
 
+This installs to `~/.claude/skills/review-code/` with all files as flat siblings.
+
 ### Manual Installation
+
+For a structured installation with separate directories:
 
 ```bash
 git clone https://github.com/dakaneye/claude-review-code.git
@@ -21,10 +25,7 @@ cd claude-review-code
 ./install.sh
 ```
 
-The installer will:
-1. Create the required directory structure in `~/.claude/`
-2. Copy all skill files, scripts, rules, and patterns
-3. Verify the installation
+The manual installer creates the full directory structure in `~/.claude/`.
 
 ## Usage
 
@@ -43,14 +44,17 @@ The installer will:
 
 ### Helper Scripts
 
+After PRPM install:
 ```bash
-# Full PR context with comments, reviews, and checks
+~/.claude/skills/review-code/get-pr-context.sh 123
+~/.claude/skills/review-code/get-failing-checks.sh 123
+~/.claude/skills/review-code/gh-issue.sh 456
+```
+
+After manual install:
+```bash
 ~/.claude/scripts/get-pr-context.sh 123
-
-# Get failing CI check logs
 ~/.claude/scripts/get-failing-checks.sh 123
-
-# Get issue context (auto-detects repo from git remote)
 ~/.claude/scripts/gh-issue.sh 456
 ```
 

@@ -117,4 +117,4 @@ resource "aws_db_instance" "prod" {
 ```
 
 ## Deep Dives
-See `~/.claude/concepts/language-standards/terraform/` for state management, module design, security, testing, and anti-patterns.
+See `~/.claude/skills/review-code/` (terraform-*.md, state.md, modules.md, security.md, testing.md, anti-patterns.md files) for state management, module design, security, testing, and anti-patterns.

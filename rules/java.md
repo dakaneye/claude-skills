@@ -101,4 +101,4 @@ for (Order o : orders) { Customer c = map.get(o.getCustomerId()); }
 ```
 
 ## Deep Dives
-See `~/.claude/concepts/language-standards/java/` for focused files on exceptions, optional, immutability, streams, nulls, testing, concurrency, and AI anti-patterns.
+See `~/.claude/skills/review-code/` (java-*.md files) for focused files on exceptions, optional, immutability, streams, nulls, testing, concurrency, and AI anti-patterns.
