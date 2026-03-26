@@ -1,0 +1,37 @@
+{
+  "name": "@dakaneye/review-code",
+  "version": "1.0.0",
+  "description": "Comprehensive code review skill with language-specific expertise, 14-dimension scorecard, AI-spray detection, and staff-level analysis. Supports Go (DRIVEC), Node.js (STREAMS), Java (INVEST), Python (TYPED), Bash (VEST), and Terraform (STATELOCK).",
+  "author": "dakaneye",
+  "license": "MIT",
+  "format": "claude",
+  "subtype": "skill",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/dakaneye/claude-review-code"
+  },
+  "keywords": [
+    "code-review",
+    "pr-review",
+    "security",
+    "quality",
+    "golang",
+    "nodejs",
+    "java",
+    "python",
+    "bash",
+    "terraform",
+    "ai-detection",
+    "staff-level"
+  ],
+  "files": [
+    "skills/review-code/SKILL.md",
+    "agents/*.md",
+    "scripts/*.sh",
+    "rules/*.md",
+    "concepts/**/*.md",
+    "patterns/**/*.md",
+    "README.md",
+    "LICENSE"
+  ]
+}
