@@ -1,12 +1,13 @@
 #!/usr/bin/env bash
 
-# review-code-skill installer
-# Installs the review-code skill and its dependencies into ~/.claude/
+# review-code skill installer
+# Installs the review-code skill into ~/.claude/skills/review-code/
+# Uses the same flat structure as PRPM for consistency
 
 set -Eeuo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-TARGET_DIR="${HOME}/.claude"
+TARGET_DIR="${HOME}/.claude/skills/review-code"
 
 # Colors for output
 RED='\033[0;31m'
@@ -18,101 +19,79 @@ log_info() { echo -e "${GREEN}[INFO]${NC} $*"; }
 log_warn() { echo -e "${YELLOW}[WARN]${NC} $*"; }
 log_error() { echo -e "${RED}[ERROR]${NC} $*" >&2; }
 
-# Backup existing files
+# Backup existing installation
 backup_if_exists() {
-    local path="$1"
-    if [[ -e "$path" ]]; then
-        local backup="${path}.backup.$(date +%Y%m%d%H%M%S)"
-        log_warn "Backing up existing $path to $backup"
-        mv "$path" "$backup"
+    if [[ -d "$TARGET_DIR" ]]; then
+        local backup="${TARGET_DIR}.backup.$(date +%Y%m%d%H%M%S)"
+        log_warn "Backing up existing installation to $backup"
+        mv "$TARGET_DIR" "$backup"
     fi
 }
 
-# Create directory structure
-create_dirs() {
-    local dirs=(
-        "$TARGET_DIR/skills/review-code"
-        "$TARGET_DIR/scripts"
-        "$TARGET_DIR/rules"
-        "$TARGET_DIR/agents"
-        "$TARGET_DIR/concepts/language-standards/bash"
-        "$TARGET_DIR/concepts/language-standards/go"
-        "$TARGET_DIR/concepts/language-standards/java"
-        "$TARGET_DIR/concepts/language-standards/nodejs"
-        "$TARGET_DIR/concepts/language-standards/python"
-        "$TARGET_DIR/concepts/language-standards/terraform"
-        "$TARGET_DIR/patterns/anti-patterns"
-        "$TARGET_DIR/patterns/architecture"
-        "$TARGET_DIR/patterns/ddd"
-        "$TARGET_DIR/patterns/distributed"
-        "$TARGET_DIR/patterns/enterprise"
-        "$TARGET_DIR/patterns/gof/behavioral"
-        "$TARGET_DIR/patterns/gof/creational"
-        "$TARGET_DIR/patterns/gof/structural"
-        "$TARGET_DIR/patterns/reliability"
-    )
-
-    for dir in "${dirs[@]}"; do
-        mkdir -p "$dir"
-    done
-    log_info "Created directory structure"
-}
-
-# Copy files with verification
+# Copy all files to flat structure (matching PRPM behavior)
 copy_files() {
-    log_info "Installing skill files..."
+    log_info "Installing to $TARGET_DIR (flat structure)..."
+
+    mkdir -p "$TARGET_DIR"
 
     # Main skill file
-    cp "$SCRIPT_DIR/skills/review-code/SKILL.md" "$TARGET_DIR/skills/review-code/"
+    cp "$SCRIPT_DIR/skills/review-code/SKILL.md" "$TARGET_DIR/"
 
     # Scripts (make executable)
-    for script in get-pr-context.sh get-failing-checks.sh gh-issue.sh pr-context-lib.sh; do
-        if [[ -f "$SCRIPT_DIR/scripts/$script" ]]; then
-            cp "$SCRIPT_DIR/scripts/$script" "$TARGET_DIR/scripts/"
-            chmod +x "$TARGET_DIR/scripts/$script"
-        fi
+    for script in "$SCRIPT_DIR"/scripts/*.sh; do
+        [[ -f "$script" ]] || continue
+        cp "$script" "$TARGET_DIR/"
+        chmod +x "$TARGET_DIR/$(basename "$script")"
     done
 
     # Rules
-    for rule in bash.md go.md java.md nodejs.md python.md terraform.md; do
-        if [[ -f "$SCRIPT_DIR/rules/$rule" ]]; then
-            cp "$SCRIPT_DIR/rules/$rule" "$TARGET_DIR/rules/"
+    for rule in "$SCRIPT_DIR"/rules/*.md; do
+        [[ -f "$rule" ]] || continue
+        cp "$rule" "$TARGET_DIR/"
+    done
+
+    # Agents
+    for agent in "$SCRIPT_DIR"/agents/*.md; do
+        [[ -f "$agent" ]] || continue
+        cp "$agent" "$TARGET_DIR/"
+    done
+
+    # Concepts (flatten)
+    cp "$SCRIPT_DIR/concepts/code-review.md" "$TARGET_DIR/"
+    for lang_dir in "$SCRIPT_DIR"/concepts/language-standards/*/; do
+        [[ -d "$lang_dir" ]] || continue
+        for file in "$lang_dir"*.md; do
+            [[ -f "$file" ]] || continue
+            cp "$file" "$TARGET_DIR/"
+        done
+    done
+
+    # Patterns (flatten)
+    cp "$SCRIPT_DIR/patterns/detection-signals.md" "$TARGET_DIR/"
+    [[ -f "$SCRIPT_DIR/patterns/INDEX.md" ]] && cp "$SCRIPT_DIR/patterns/INDEX.md" "$TARGET_DIR/"
+
+    for pattern_dir in "$SCRIPT_DIR"/patterns/*/; do
+        [[ -d "$pattern_dir" ]] || continue
+        # Handle nested GoF structure
+        if [[ "$(basename "$pattern_dir")" == "gof" ]]; then
+            for gof_subdir in "$pattern_dir"*/; do
+                [[ -d "$gof_subdir" ]] || continue
+                for file in "$gof_subdir"*.md; do
+                    [[ -f "$file" ]] || continue
+                    cp "$file" "$TARGET_DIR/"
+                done
+            done
+        else
+            for file in "$pattern_dir"*.md; do
+                [[ -f "$file" ]] || continue
+                cp "$file" "$TARGET_DIR/"
+            done
         fi
     done
 
-    # Concepts
-    cp "$SCRIPT_DIR/concepts/code-review.md" "$TARGET_DIR/concepts/"
-
-    # Language standards
-    for lang in bash go java nodejs python terraform; do
-        if [[ -d "$SCRIPT_DIR/concepts/language-standards/$lang" ]]; then
-            cp "$SCRIPT_DIR/concepts/language-standards/$lang"/*.md "$TARGET_DIR/concepts/language-standards/$lang/" 2>/dev/null || true
-        fi
-    done
-
-    # Patterns
-    cp "$SCRIPT_DIR/patterns/detection-signals.md" "$TARGET_DIR/patterns/"
-    cp "$SCRIPT_DIR/patterns/INDEX.md" "$TARGET_DIR/patterns/" 2>/dev/null || true
-
-    # Pattern subdirectories
-    for subdir in anti-patterns architecture ddd distributed enterprise reliability; do
-        if [[ -d "$SCRIPT_DIR/patterns/$subdir" ]]; then
-            cp "$SCRIPT_DIR/patterns/$subdir"/*.md "$TARGET_DIR/patterns/$subdir/" 2>/dev/null || true
-        fi
-    done
-
-    # GoF patterns (nested structure)
-    for gof_subdir in behavioral creational structural; do
-        if [[ -d "$SCRIPT_DIR/patterns/gof/$gof_subdir" ]]; then
-            cp "$SCRIPT_DIR/patterns/gof/$gof_subdir"/*.md "$TARGET_DIR/patterns/gof/$gof_subdir/" 2>/dev/null || true
-        fi
-    done
-
-    # Agents (custom subagent definitions)
-    if [[ -d "$SCRIPT_DIR/agents" ]]; then
-        cp "$SCRIPT_DIR/agents"/*.md "$TARGET_DIR/agents/" 2>/dev/null || true
-        log_info "Installed $(ls "$SCRIPT_DIR/agents"/*.md 2>/dev/null | wc -l | tr -d ' ') agent definitions"
-    fi
+    # README and LICENSE
+    cp "$SCRIPT_DIR/README.md" "$TARGET_DIR/"
+    cp "$SCRIPT_DIR/LICENSE" "$TARGET_DIR/"
 
     log_info "Files installed successfully"
 }
@@ -122,12 +101,12 @@ verify_install() {
     log_info "Verifying installation..."
 
     local required_files=(
-        "$TARGET_DIR/skills/review-code/SKILL.md"
-        "$TARGET_DIR/scripts/get-pr-context.sh"
-        "$TARGET_DIR/concepts/code-review.md"
-        "$TARGET_DIR/patterns/detection-signals.md"
-        "$TARGET_DIR/agents/golang-pro.md"
-        "$TARGET_DIR/agents/truth-verifier.md"
+        "$TARGET_DIR/SKILL.md"
+        "$TARGET_DIR/get-pr-context.sh"
+        "$TARGET_DIR/code-review.md"
+        "$TARGET_DIR/detection-signals.md"
+        "$TARGET_DIR/golang-pro.md"
+        "$TARGET_DIR/truth-verifier.md"
     )
 
     local missing=0
@@ -137,6 +116,10 @@ verify_install() {
             ((missing++))
         fi
     done
+
+    local file_count
+    file_count=$(find "$TARGET_DIR" -type f | wc -l | tr -d ' ')
+    log_info "Installed $file_count files"
 
     if [[ $missing -eq 0 ]]; then
         log_info "All required files present"
@@ -153,27 +136,25 @@ print_usage() {
 
 === Installation Complete ===
 
-To use the review-code skill in Claude Code:
+The review-code skill is installed to ~/.claude/skills/review-code/
 
-1. Add the skill to your CLAUDE.md manifest (if using PRPM):
+To use in Claude Code:
+
+1. Invoke directly:
+   /review-code [PR-URL|file|directory]
+
+2. Helper scripts:
+   ~/.claude/skills/review-code/get-pr-context.sh [PR_NUMBER]
+   ~/.claude/skills/review-code/get-failing-checks.sh [PR_NUMBER]
+   ~/.claude/skills/review-code/gh-issue.sh [ISSUE_NUMBER]
+
+3. Add to your CLAUDE.md manifest:
 
    <skill>
    <name>review-code</name>
    <description>Comprehensive code review with language-specific expertise</description>
    <path>skills/review-code/SKILL.md</path>
    </skill>
-
-2. Or invoke directly:
-   /review-code [PR-URL|file|directory]
-
-3. The skill uses these helper scripts:
-   ~/.claude/scripts/get-pr-context.sh [PR_NUMBER]
-   ~/.claude/scripts/get-failing-checks.sh [PR_NUMBER]
-   ~/.claude/scripts/gh-issue.sh [ISSUE_NUMBER]
-
-4. Language rules are in ~/.claude/rules/
-5. Pattern references are in ~/.claude/patterns/
-6. Detailed language standards are in ~/.claude/concepts/language-standards/
 
 EOF
 }
@@ -183,15 +164,7 @@ main() {
     echo "=== review-code Skill Installer ==="
     echo ""
 
-    # Check if target exists
-    if [[ -d "$TARGET_DIR" ]]; then
-        log_info "Installing into existing $TARGET_DIR"
-    else
-        log_info "Creating $TARGET_DIR"
-        mkdir -p "$TARGET_DIR"
-    fi
-
-    create_dirs
+    backup_if_exists
     copy_files
 
     if verify_install; then
