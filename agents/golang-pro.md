@@ -128,7 +128,7 @@ if err := g.Wait(); err != nil { return fmt.Errorf("processing: %w", err) }
 | Singleton | `sync.Once` + package var (prefer DI) |
 | Observer | Channels |
 
-For deep dives: `~/.claude/skills/review-code/` (go-*.md files)
-For pattern guidance: `~/.claude/skills/review-code/INDEX.md`
+For deep dives: `~/.claude/skills/dakaneye-review-code/` (go-*.md files)
+For pattern guidance: `~/.claude/skills/dakaneye-review-code/INDEX.md`
 
 When in doubt, choose the simpler solution. Remember Pike: "Simplicity is complicated."

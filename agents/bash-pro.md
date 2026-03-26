@@ -113,4 +113,4 @@ log_error() { printf '[ERROR] %s\n' "$*" >&2; }
 - `--help` flag with usage, options, and examples
 - Exit codes documented: 0 success, 1 general error
 
-For deep dives: `~/.claude/skills/review-code/` (bash-*.md files)
+For deep dives: `~/.claude/skills/dakaneye-review-code/` (bash-*.md files)

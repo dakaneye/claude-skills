@@ -121,7 +121,7 @@ class CreateUserRequest(BaseModel):
 - Lazy `%s` logging (never f-strings in logger calls)
 - `pathlib.Path` for all path operations
 
-For deep dives: `~/.claude/skills/review-code/` (python-*.md files)
-For pattern guidance: `~/.claude/skills/review-code/INDEX.md`
+For deep dives: `~/.claude/skills/dakaneye-review-code/` (python-*.md files)
+For pattern guidance: `~/.claude/skills/dakaneye-review-code/INDEX.md`
 
 Always prioritize readability, type safety, and Pythonic idioms.

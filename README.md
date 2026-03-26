@@ -10,7 +10,7 @@ A comprehensive code review skill with language-specific expertise, truth-focuse
 ### Via PRPM (Recommended)
 
 ```bash
-prpm install review-code
+prpm install dakaneye-review-code
 ```
 
 ### Manual Installation
@@ -21,7 +21,7 @@ cd claude-review-code
 ./install.sh
 ```
 
-Both methods install to `~/.claude/skills/review-code/` with all files as flat siblings.
+Both methods install to `~/.claude/skills/dakaneye-review-code/` with all files as flat siblings.
 
 ## Usage
 
@@ -41,9 +41,9 @@ Both methods install to `~/.claude/skills/review-code/` with all files as flat s
 ### Helper Scripts
 
 ```bash
-~/.claude/skills/review-code/get-pr-context.sh 123
-~/.claude/skills/review-code/get-failing-checks.sh 123
-~/.claude/skills/review-code/gh-issue.sh 456
+~/.claude/skills/dakaneye-review-code/get-pr-context.sh 123
+~/.claude/skills/dakaneye-review-code/get-failing-checks.sh 123
+~/.claude/skills/dakaneye-review-code/gh-issue.sh 456
 ```
 
 ## Features

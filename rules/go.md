@@ -93,4 +93,4 @@ func NewClient(base string, opts ...Option) *Client { /* apply opts */ }
 ```
 
 ## Deep Dives
-See `~/.claude/skills/review-code/` (go-*.md files) for focused files on errors, receivers, interfaces, context, concurrency, testing, performance, and AI anti-patterns.
+See `~/.claude/skills/dakaneye-review-code/` (go-*.md files) for focused files on errors, receivers, interfaces, context, concurrency, testing, performance, and AI anti-patterns.

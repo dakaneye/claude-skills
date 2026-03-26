@@ -96,13 +96,13 @@ gh secret set PRPM_TOKEN --repo dakaneye/claude-review-code < <(jq -r '.token' ~
 
 ## File Reference Conventions
 
-PRPM installs all files flat into `~/.claude/skills/review-code/`. Reference paths accordingly:
+PRPM installs all files flat into `~/.claude/skills/dakaneye-review-code/`. Reference paths accordingly:
 
 | Context | Path Style | Example |
 |---------|------------|---------|
-| PRPM paths | `~/.claude/skills/review-code/` | `~/.claude/skills/review-code/get-pr-context.sh` |
+| PRPM paths | `~/.claude/skills/dakaneye-review-code/` | `~/.claude/skills/dakaneye-review-code/get-pr-context.sh` |
 | Agent implements | Relative filename | `code-review.md` |
-| Agent deep dives | `~/.claude/skills/review-code/` | `~/.claude/skills/review-code/go-*.md` |
+| Agent deep dives | `~/.claude/skills/dakaneye-review-code/` | `~/.claude/skills/dakaneye-review-code/go-*.md` |
 | Script output | `~/.claude/` | `~/.claude/prs/<owner>-<repo>/` |
 
 ## Adding New Content

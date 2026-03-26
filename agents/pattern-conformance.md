@@ -205,7 +205,7 @@ Before reviewing, understand the codebase's established patterns:
 
 ## Design Pattern Verification
 
-Reference `~/.claude/skills/review-code/INDEX.md` for pattern appropriateness checks.
+Reference `~/.claude/skills/dakaneye-review-code/INDEX.md` for pattern appropriateness checks.
 
 ### GoF Pattern Anti-Patterns to Detect
 
@@ -269,7 +269,7 @@ If any answer is "No" → FLAG as premature abstraction
 
 For deep pattern guidance, load the specific pattern file:
 ```
-@~/.claude/skills/review-code/strategy.md
-@~/.claude/skills/review-code/circuit-breaker.md
-@~/.claude/skills/review-code/god-object.md
+@~/.claude/skills/dakaneye-review-code/strategy.md
+@~/.claude/skills/dakaneye-review-code/circuit-breaker.md
+@~/.claude/skills/dakaneye-review-code/god-object.md
 ```

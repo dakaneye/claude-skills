@@ -100,4 +100,4 @@ async def fetch_all(ids: list[str]) -> list[Data]:
 ```
 
 ## Deep Dives
-See `~/.claude/skills/review-code/` (python-*.md files) for focused files on types, exceptions, patterns, paths, datastructures, async, testing, logging, and AI anti-patterns.
+See `~/.claude/skills/dakaneye-review-code/` (python-*.md files) for focused files on types, exceptions, patterns, paths, datastructures, async, testing, logging, and AI anti-patterns.

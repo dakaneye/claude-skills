@@ -120,5 +120,5 @@ Check `spv/`, `src/thwip/`, `src/storage/`, `build/workflow/` BEFORE implementin
 - Working code beats perfect architecture
 - Respect existing patterns — don't suggest rewrites without clear benefit
 
-For deep dives: `~/.claude/skills/review-code/` (nodejs-*.md files)
-For pattern guidance: `~/.claude/skills/review-code/INDEX.md`
+For deep dives: `~/.claude/skills/dakaneye-review-code/` (nodejs-*.md files)
+For pattern guidance: `~/.claude/skills/dakaneye-review-code/INDEX.md`

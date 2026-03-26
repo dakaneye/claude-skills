@@ -16,9 +16,9 @@ Comprehensive code review with language-specific expertise, truth-focused analys
 ## Context Gathering Scripts
 
 ```sh
-~/.claude/skills/review-code/get-pr-context.sh [PR_NUMBER]    # Full PR context
-~/.claude/skills/review-code/get-failing-checks.sh [PR_NUMBER] # CI failure logs
-~/.claude/skills/review-code/gh-issue.sh [ISSUE_NUMBER]        # Issue context
+~/.claude/skills/dakaneye-review-code/get-pr-context.sh [PR_NUMBER]    # Full PR context
+~/.claude/skills/dakaneye-review-code/get-failing-checks.sh [PR_NUMBER] # CI failure logs
+~/.claude/skills/dakaneye-review-code/gh-issue.sh [ISSUE_NUMBER]        # Issue context
 ```
 
 ## Core Principles
@@ -258,4 +258,4 @@ If skipping on sensitive code, add: "This PR modifies [auth/payments/etc]. No fl
 - Don't suggest abstractions for one-time operations
 - Don't approve PRs that bundle unrelated changes
 
-See also: `~/.claude/skills/review-code/detection-signals.md`, `~/.claude/skills/review-code/code-review.md`
+See also: `~/.claude/skills/dakaneye-review-code/detection-signals.md`, `~/.claude/skills/dakaneye-review-code/code-review.md`

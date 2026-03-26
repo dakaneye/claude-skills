@@ -1,13 +1,13 @@
 #!/usr/bin/env bash
 
 # review-code skill installer
-# Installs the review-code skill into ~/.claude/skills/review-code/
+# Installs the review-code skill into ~/.claude/skills/dakaneye-review-code/
 # Uses the same flat structure as PRPM for consistency
 
 set -Eeuo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-TARGET_DIR="${HOME}/.claude/skills/review-code"
+TARGET_DIR="${HOME}/.claude/skills/dakaneye-review-code"
 
 # Colors for output
 RED='\033[0;31m'
@@ -136,7 +136,7 @@ print_usage() {
 
 === Installation Complete ===
 
-The review-code skill is installed to ~/.claude/skills/review-code/
+The review-code skill is installed to ~/.claude/skills/dakaneye-review-code/
 
 To use in Claude Code:
 
@@ -144,9 +144,9 @@ To use in Claude Code:
    /review-code [PR-URL|file|directory]
 
 2. Helper scripts:
-   ~/.claude/skills/review-code/get-pr-context.sh [PR_NUMBER]
-   ~/.claude/skills/review-code/get-failing-checks.sh [PR_NUMBER]
-   ~/.claude/skills/review-code/gh-issue.sh [ISSUE_NUMBER]
+   ~/.claude/skills/dakaneye-review-code/get-pr-context.sh [PR_NUMBER]
+   ~/.claude/skills/dakaneye-review-code/get-failing-checks.sh [PR_NUMBER]
+   ~/.claude/skills/dakaneye-review-code/gh-issue.sh [ISSUE_NUMBER]
 
 3. Add to your CLAUDE.md manifest:
 
