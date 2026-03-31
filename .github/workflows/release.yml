@@ -84,17 +84,60 @@ jobs:
           name: "${{ steps.tag.outputs.skill_name }} v${{ steps.tag.outputs.version }}"
           generate_release_notes: true
 
-      - name: Push version bump commit
-        # Best-effort: may fail if branch protection blocks direct pushes.
-        # The tag is the source of truth for version; this just syncs prpm.json.
-        continue-on-error: true
+      - name: Commit version bump to main via API
+        # Uses the GitHub API to create the commit, which GitHub automatically
+        # signs — satisfying the required_signatures branch protection rule.
         env:
           SKILL_DIR: ${{ steps.tag.outputs.skill_dir }}
           SKILL_NAME: ${{ steps.tag.outputs.skill_name }}
           VERSION: ${{ steps.tag.outputs.version }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add "$SKILL_DIR/prpm.json"
-          git commit -m "chore($SKILL_NAME): bump version to $VERSION" || echo "No version changes to commit"
-          git push origin HEAD:main
+          FILE_PATH="$SKILL_DIR/prpm.json"
+          CONTENT_B64=$(base64 -w0 "$FILE_PATH")
+          MAIN_SHA=$(gh api repos/${{ github.repository }}/git/ref/heads/main --jq '.object.sha')
+
+          # Get the tree of the current main commit
+          TREE_SHA=$(gh api repos/${{ github.repository }}/git/commits/"$MAIN_SHA" --jq '.tree.sha')
+
+          # Get the current blob SHA for the file on main
+          OLD_BLOB_SHA=$(gh api "repos/${{ github.repository }}/contents/$FILE_PATH?ref=main" --jq '.sha' 2>/dev/null || echo "")
+
+          # Create a new blob with the updated file content
+          NEW_BLOB_SHA=$(gh api repos/${{ github.repository }}/git/blobs \
+            --method POST \
+            --field encoding=base64 \
+            --field content="$CONTENT_B64" \
+            --jq '.sha')
+
+          # Create a new tree with the updated file
+          NEW_TREE_SHA=$(gh api repos/${{ github.repository }}/git/trees \
+            --method POST \
+            --field base_tree="$TREE_SHA" \
+            --input - <<TREEOF | jq -r '.sha'
+          {
+            "tree": [{
+              "path": "$FILE_PATH",
+              "mode": "100644",
+              "type": "blob",
+              "sha": "$NEW_BLOB_SHA"
+            }]
+          }
+          TREEOF
+          )
+
+          # Create a signed commit via the API
+          NEW_COMMIT_SHA=$(gh api repos/${{ github.repository }}/git/commits \
+            --method POST \
+            --field message="chore($SKILL_NAME): bump version to $VERSION" \
+            --field tree="$NEW_TREE_SHA" \
+            --field "parents[]=$MAIN_SHA" \
+            --jq '.sha')
+
+          # Update main to point to the new commit
+          gh api repos/${{ github.repository }}/git/refs/heads/main \
+            --method PATCH \
+            --field sha="$NEW_COMMIT_SHA" \
+            --field force=false
+
+          echo "Version bump committed: $NEW_COMMIT_SHA"
