@@ -3,7 +3,8 @@ name: Release
 on:
   push:
     tags:
-      - 'v*'
+      # Match tags like review-code/v1.0.5
+      - '*/v*'
 
 jobs:
   publish:
@@ -12,6 +13,39 @@ jobs:
       contents: write
     steps:
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+        with:
+          # Need full history + write access to push version bump commit
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Parse tag
+        id: tag
+        run: |
+          TAG="${GITHUB_REF#refs/tags/}"
+          SKILL_NAME="${TAG%%/v*}"
+          VERSION="${TAG#*/v}"
+          SKILL_DIR="skills/${SKILL_NAME}"
+
+          if [ ! -d "$SKILL_DIR" ]; then
+            echo "Error: Skill directory not found: $SKILL_DIR"
+            exit 1
+          fi
+
+          echo "skill_name=$SKILL_NAME" >> "$GITHUB_OUTPUT"
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "skill_dir=$SKILL_DIR" >> "$GITHUB_OUTPUT"
+          echo "Publishing $SKILL_NAME v$VERSION from $SKILL_DIR"
+
+      - name: Update version in prpm.json
+        run: |
+          cd "${{ steps.tag.outputs.skill_dir }}"
+          jq --arg v "${{ steps.tag.outputs.version }}" '.version = $v' prpm.json > prpm.json.tmp
+          mv prpm.json.tmp prpm.json
+
+      - name: Update version in SKILL.md frontmatter
+        run: |
+          cd "${{ steps.tag.outputs.skill_dir }}"
+          sed -i "s/^version: .*/version: ${{ steps.tag.outputs.version }}/" SKILL.md
 
       - name: Setup Node.js
         uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
@@ -31,12 +65,21 @@ jobs:
           EOF
 
       - name: Validate package
-        run: prpm publish --dry-run
+        run: cd "${{ steps.tag.outputs.skill_dir }}" && prpm publish --dry-run
 
       - name: Publish to PRPM
-        run: prpm publish
+        run: cd "${{ steps.tag.outputs.skill_dir }}" && prpm publish
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@153bb8e04406b158c6c84fc1615b65b24149a1fe # v2
         with:
+          name: "${{ steps.tag.outputs.skill_name }} v${{ steps.tag.outputs.version }}"
           generate_release_notes: true
+
+      - name: Push version bump commit
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add "${{ steps.tag.outputs.skill_dir }}/prpm.json" "${{ steps.tag.outputs.skill_dir }}/SKILL.md"
+          git commit -m "chore(${{ steps.tag.outputs.skill_name }}): bump version to ${{ steps.tag.outputs.version }}" || echo "No version changes to commit"
+          git push origin HEAD:main
