@@ -1,31 +1,45 @@
-# Claude Development Guidelines for claude-review-code
+# Claude Development Guidelines for claude-skills
 
 ## Project Overview
 
-PRPM skill package providing comprehensive code review capabilities for Claude Code.
+Monorepo for independently publishable PRPM skill packages. Each skill lives under `skills/<name>/` with its own `prpm.json`, agents, scripts, and supporting content.
 
 ## Structure
 
 ```
-skills/review-code/SKILL.md    Main skill entry point
-agents/                        12 specialized review subagents
-scripts/                       PR context helper scripts (bash)
-rules/                         Language quality checklists
-concepts/                      Deep dive documentation
-patterns/                      Design pattern references
+claude-skills/
+├── skills/
+│   └── <skill-name>/
+│       ├── SKILL.md           # Skill entry point (version in frontmatter)
+│       ├── prpm.json          # PRPM package definition
+│       ├── evals/             # Reasoning and trigger evals
+│       ├── agents/            # Specialized subagents
+│       ├── scripts/           # Helper scripts
+│       ├── rules/             # Language quality checklists
+│       ├── concepts/          # Deep dive documentation
+│       └── patterns/          # Design pattern references
+├── tests/                     # Linter and eval validator (scan all skills)
+├── .github/workflows/         # CI + per-skill release
+├── CLAUDE.md
+├── README.md
+├── CONTRIBUTING.md
+└── LICENSE
 ```
 
 ## Key Patterns
 
-### Skill Files
-- Main skill at `skills/review-code/SKILL.md`
-- Agents reference relative paths: `concepts/code-review.md` not `~/.claude/concepts/code-review.md`
-- Scripts auto-detect repo from git remote (no hardcoded defaults)
+### Skills Are Self-Contained
+Each skill directory contains everything it needs. No shared code between skills. This keeps skills independently publishable.
 
 ### Path References
-- Use `~/.claude/` paths for user-facing documentation (README, usage examples)
-- Use relative paths in agent `implements:` sections
-- Scripts output to `~/.claude/prs/` for PR context caching
+- Use `~/.claude/skills/dakaneye-<skill-name>/` in agent/rule files (runtime PRPM install path)
+- Use relative paths within a skill directory for file references in `prpm.json`
+- Scripts auto-detect repo from git remote (no hardcoded defaults)
+
+### Versioning
+- Tags drive releases: `<skill-name>/v<semver>` (e.g., `review-code/v1.0.5`)
+- Release workflow auto-bumps version in `prpm.json` and `SKILL.md` frontmatter
+- Never manually edit version fields
 
 ### Scripts
 - All scripts use `set -Eeuo pipefail`
@@ -37,53 +51,46 @@ patterns/                      Design pattern references
 Before committing, all gates must pass:
 
 ```bash
-# 1. Validate prpm.json
-jq empty prpm.json
+# 1. Validate all prpm.json files
+for f in skills/*/prpm.json; do jq empty "$f"; done
 
-# 2. Check required files exist
-test -f skills/review-code/SKILL.md
-test -f README.md
-test -f LICENSE
+# 2. Each skill has a SKILL.md
+for d in skills/*/; do test -f "${d}SKILL.md"; done
 
 # 3. Validate scripts are executable
-for f in scripts/*.sh; do test -x "$f" || echo "Not executable: $f"; done
+for f in skills/*/scripts/*.sh; do test -x "$f" || echo "Not executable: $f"; done
 
 # 4. Shellcheck scripts
-shellcheck scripts/*.sh
+shellcheck -x -S error skills/*/scripts/*.sh
 
-# 5. Check for machine-specific references
-! grep -r '/Users/' --include='*.md' --include='*.sh' .
-! grep -r 'chainguard-dev' --include='*.md' --include='*.sh' . | grep -v 'Sam Newman'
+# 5. Skill linter
+python3 tests/skill-linter.py
 
-# 6. Verify no dangling file references
-# (check that files referenced in agents/skills exist)
+# 6. Eval validator
+python3 tests/eval-validator.py
+
+# 7. Check for machine-specific references
+! grep -r '/Users/' --include='*.md' --include='*.sh' --exclude='CLAUDE.md' .
 ```
 
 ## Pre-Push Checklist
 
-Before pushing:
-
 1. All quality gates pass
-2. prpm.json version updated if releasing
-3. README reflects any new features
-4. No hardcoded personal paths or repos
+2. No hardcoded personal paths or repos
 
 ## Releasing
 
-See `CONTRIBUTING.md` for full release documentation.
-
 ```bash
-# 1. Update version in prpm.json
-# 2. Commit version bump
-git add prpm.json && git commit -m "chore: bump version to X.Y.Z"
-git push origin main
-
-# 3. Tag and push
-git tag -a vX.Y.Z -m "Release vX.Y.Z"
-git push origin vX.Y.Z
+# Tag triggers the release — version is auto-bumped by CI
+git tag -a review-code/v1.0.5 -m "review-code v1.0.5"
+git push origin review-code/v1.0.5
 ```
 
-CI will automatically publish to PRPM on tag push.
+CI will:
+1. Update version in `skills/review-code/prpm.json` and `SKILL.md`
+2. Publish to PRPM
+3. Create GitHub Release
+4. Push version bump commit to main
 
 ### Token Expiry
 
@@ -91,30 +98,15 @@ If release fails with auth errors, refresh the PRPM token:
 
 ```bash
 prpm login
-gh secret set PRPM_TOKEN --repo dakaneye/claude-review-code < <(jq -r '.token' ~/.prpmrc)
+gh secret set PRPM_TOKEN --repo dakaneye/claude-skills < <(jq -r '.token' ~/.prpmrc)
 ```
 
-## File Reference Conventions
+## Adding a New Skill
 
-PRPM installs all files flat into `~/.claude/skills/dakaneye-review-code/`. Reference paths accordingly:
-
-| Context | Path Style | Example |
-|---------|------------|---------|
-| PRPM paths | `~/.claude/skills/dakaneye-review-code/` | `~/.claude/skills/dakaneye-review-code/get-pr-context.sh` |
-| Agent implements | Relative filename | `code-review.md` |
-| Agent deep dives | `~/.claude/skills/dakaneye-review-code/` | `~/.claude/skills/dakaneye-review-code/go-*.md` |
-| Script output | `~/.claude/` | `~/.claude/prs/<owner>-<repo>/` |
-
-## Adding New Content
-
-### New Language Support
-1. Add `rules/<lang>.md` with mnemonic checklist
-2. Add `concepts/language-standards/<lang>/` deep dives
-3. Add `agents/<lang>-pro.md` expert agent
-4. Update SKILL.md language agent table
-5. Update README language checklist table
-
-### New Pattern
-1. Add to appropriate `patterns/` subdirectory
-2. Update `patterns/INDEX.md` if significant
-3. Reference from relevant agents if applicable
+1. Create `skills/<name>/SKILL.md` with frontmatter (name, version, description)
+2. Create `skills/<name>/prpm.json` with package definition
+3. Create `skills/<name>/evals/evals.json` and `trigger-evals.json`
+4. Add any agents, scripts, rules, concepts, patterns under the skill directory
+5. Verify: `python3 tests/skill-linter.py && python3 tests/eval-validator.py`
+6. Update `README.md` skill listing
+7. Tag to release: `git tag -a <name>/v1.0.0 -m "<name> v1.0.0"`
