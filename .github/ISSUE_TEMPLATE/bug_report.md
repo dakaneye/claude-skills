@@ -17,8 +17,12 @@ What you expected to happen.
 
 **Environment**
 - OS: [e.g. macOS 14.0]
-- Claude Code version: [e.g. 1.0.0]
-- Installation method: [PRPM / manual install.sh]
+- Version: [e.g. 0.1.0]
+
+**Logs**
+```
+Paste relevant logs here
+```
 
 **Additional context**
-Any other relevant information (error messages, screenshots).
+Any other relevant information.
