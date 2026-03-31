@@ -12,19 +12,17 @@ jobs:
     steps:
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
 
-      - name: Validate prpm.json
+      - name: Validate prpm.json for each skill
         run: |
-          if [ ! -f prpm.json ]; then
-            echo "Error: prpm.json not found"
-            exit 1
-          fi
-          jq empty prpm.json || { echo "Error: prpm.json is not valid JSON"; exit 1; }
-          echo "prpm.json is valid"
+          for manifest in skills/*/prpm.json; do
+            echo "Validating $manifest..."
+            jq empty "$manifest" || { echo "Error: $manifest is not valid JSON"; exit 1; }
+          done
+          echo "All prpm.json files valid"
 
       - name: Check required files exist
         run: |
           required_files=(
-            "skills/review-code/SKILL.md"
             "README.md"
             "LICENSE"
           )
@@ -34,28 +32,40 @@ jobs:
               exit 1
             fi
           done
+          # Each skill must have a SKILL.md
+          for skill_dir in skills/*/; do
+            if [ ! -f "${skill_dir}SKILL.md" ]; then
+              echo "Error: Missing SKILL.md in $skill_dir"
+              exit 1
+            fi
+          done
           echo "All required files present"
 
       - name: Validate scripts are executable
         run: |
-          for script in scripts/*.sh; do
+          found=0
+          for script in skills/*/scripts/*.sh; do
+            [ -f "$script" ] || continue
+            found=1
             if [ ! -x "$script" ]; then
               echo "Error: $script is not executable"
               exit 1
             fi
           done
-          echo "All scripts are executable"
+          if [ "$found" -eq 0 ]; then
+            echo "No scripts found to validate"
+          else
+            echo "All scripts are executable"
+          fi
 
       - name: Count package files
         run: |
-          echo "Package contents:"
-          echo "- Skills: $(find skills -name '*.md' | wc -l | tr -d ' ')"
-          echo "- Agents: $(find agents -name '*.md' | wc -l | tr -d ' ')"
-          echo "- Rules: $(find rules -name '*.md' | wc -l | tr -d ' ')"
-          echo "- Concepts: $(find concepts -name '*.md' | wc -l | tr -d ' ')"
-          echo "- Patterns: $(find patterns -name '*.md' | wc -l | tr -d ' ')"
-          echo "- Scripts: $(find scripts -name '*.sh' | wc -l | tr -d ' ')"
-          echo "- Total files: $(find . -type f -not -path './.git/*' | wc -l | tr -d ' ')"
+          for skill_dir in skills/*/; do
+            skill_name=$(basename "$skill_dir")
+            echo "=== $skill_name ==="
+            echo "  Files: $(find "$skill_dir" -type f | wc -l | tr -d ' ')"
+          done
+          echo "Total files: $(find . -type f -not -path './.git/*' -not -path './docs/*' | wc -l | tr -d ' ')"
 
   skill-lint:
     runs-on: ubuntu-latest
@@ -88,7 +98,14 @@ jobs:
 
       - name: Run ShellCheck
         # TODO: tighten to -S warning after fixing SC2034/SC2155 in existing scripts
-        run: shellcheck -x -S error scripts/*.sh
+        run: |
+          shopt -s nullglob
+          scripts=(skills/*/scripts/*.sh)
+          if [ ${#scripts[@]} -eq 0 ]; then
+            echo "No scripts to check"
+            exit 0
+          fi
+          shellcheck -x -S error "${scripts[@]}"
 
   no-hardcoded-paths:
     runs-on: ubuntu-latest
