@@ -1,31 +1,49 @@
-# review-code Skill for Claude Code
+# Claude Skills by dakaneye
 
-[![CI](https://github.com/dakaneye/claude-review-code/actions/workflows/ci.yml/badge.svg)](https://github.com/dakaneye/claude-review-code/actions/workflows/ci.yml)
+[![CI](https://github.com/dakaneye/claude-skills/actions/workflows/ci.yml/badge.svg)](https://github.com/dakaneye/claude-skills/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-A comprehensive code review skill with language-specific expertise, truth-focused analysis, and deep sequential thinking.
+Curated skill packages for Claude Code. Each skill is independently installable via [PRPM](https://prpm.dev).
+
+## Available Skills
+
+| Skill | Package | Description |
+|-------|---------|-------------|
+| [review-code](skills/review-code/) | `dakaneye-review-code` | Comprehensive code review with language-specific expertise, truth-focused analysis, and deep sequential thinking |
 
 ## Installation
 
 ### Via PRPM (Recommended)
 
 ```bash
+# Install a specific skill
 prpm install dakaneye-review-code
 ```
 
 ### Manual Installation
 
 ```bash
-git clone https://github.com/dakaneye/claude-review-code.git
-cd claude-review-code
-./install.sh
+git clone https://github.com/dakaneye/claude-skills.git
+cd claude-skills
+./install.sh review-code
 ```
 
-Both methods install to `~/.claude/skills/dakaneye-review-code/` with all files as flat siblings.
+## review-code
 
-## Usage
+Full-spectrum code review covering correctness, security, maintainability, and test coverage.
 
-### In Claude Code
+### Supported Languages
+
+| Language | Checklist | Expert Agent |
+|----------|-----------|-------------|
+| Go | DRIVEC | golang-pro |
+| Node.js | STREAMS | nodejs-principal |
+| Java | INVEST | java-pro |
+| Python | TYPED | python-pro |
+| Bash | VEST | bash-pro |
+| Terraform | STATELOCK | terraform-specialist |
+
+### Usage
 
 ```bash
 # Review a PR
@@ -38,61 +56,18 @@ Both methods install to `~/.claude/skills/dakaneye-review-code/` with all files 
 /review-code src/auth/
 ```
 
-### Helper Scripts
+### What It Reviews
 
-```bash
-~/.claude/skills/dakaneye-review-code/get-pr-context.sh 123
-~/.claude/skills/dakaneye-review-code/get-failing-checks.sh 123
-~/.claude/skills/dakaneye-review-code/gh-issue.sh 456
-```
-
-## Features
-
-- **Size-based agent strategy**: Spawns appropriate number of review agents based on PR size
-- **12 custom subagents**: Language experts, truth-verifier, ai-spray-detector, pattern-conformance, etc.
-- **Language-specific checklists**: DRIVEC (Go), STREAMS (Node), INVEST (Java), TYPED (Python), VEST (Bash), STATELOCK (Terraform)
-- **AI detection signals**: Identifies over-engineering, dead code, AI-spray patterns
-- **14-dimension scorecard**: Comprehensive evaluation with letter grades
-- **Staff Eyes Required**: Flags locations needing human judgment
-- **Hermeneutic analysis**: Understands context before judging details
-
-## Language Checklists
-
-| Language | Mnemonic | Focus Areas |
-|----------|----------|-------------|
-| Go | DRIVEC | DRY, Receivers, Interfaces, Validation, Errors, Context |
-| Node.js | STREAMS | Security, Types, Reuse, Errors, Async, Modules, Simplicity |
-| Java | INVEST | Immutability, Nulls, Validation, Exceptions, Standard lib, Testing |
-| Python | TYPED | Types, Yield, Pathlib, Exceptions, Dataclass |
-| Bash | VEST | Variables, Errors, Security, Testing |
-| Terraform | STATELOCK | Style, Types, Architecture, Testing, Environments, Locking, OIDC, CI/CD, Keep simple |
-
-## Contents
-
-```
-claude-review-code/
-├── skills/review-code/SKILL.md   # Main skill definition
-├── agents/                       # 12 specialized review agents
-├── scripts/                      # PR context helper scripts
-├── rules/                        # Language quality checklists
-├── concepts/                     # Deep dive documentation
-│   └── language-standards/       # Per-language references
-└── patterns/                     # Design pattern library
-    ├── anti-patterns/            # God Object, Anemic Domain, etc.
-    ├── architecture/             # Clean, Hexagonal, CQRS, etc.
-    ├── gof/                      # Gang of Four patterns
-    └── reliability/              # Circuit Breaker, Retry, etc.
-```
-
-## Requirements
-
-- Claude Code CLI
-- `gh` CLI (GitHub CLI) for PR/issue context
-- Git
+- **14-dimension quality scorecard** with weighted scoring
+- **Language-specific checklists** (DRIVEC, STREAMS, INVEST, TYPED, VEST, STATELOCK)
+- **AI-spray detection** identifying over-engineered AI-generated code
+- **Security audit** covering OWASP Top 10
+- **Pattern conformance** against 40+ design patterns
+- **Truth verification** ensuring code matches its claims
 
 ## Contributing
 
-See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
+See [CONTRIBUTING.md](CONTRIBUTING.md) for development setup and guidelines.
 
 ## License
 
