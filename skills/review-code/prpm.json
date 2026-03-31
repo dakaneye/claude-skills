@@ -6,7 +6,7 @@
   "license": "MIT",
   "format": "claude",
   "subtype": "skill",
-  "repository": "https://github.com/dakaneye/claude-review-code",
+  "repository": "https://github.com/dakaneye/claude-skills",
   "tags": [
     "code-review",
     "pr-review",
@@ -18,7 +18,7 @@
     "ai-detection"
   ],
   "files": [
-    "skills/review-code/SKILL.md",
+    "SKILL.md",
     "agents/ai-spray-detector.md",
     "agents/bash-pro.md",
     "agents/code-reviewer.md",
@@ -131,7 +131,7 @@
     "patterns/reliability/graceful-degradation.md",
     "patterns/reliability/retry-backoff.md",
     "patterns/reliability/timeout.md",
-    "README.md",
-    "LICENSE"
+    "evals/evals.json",
+    "evals/trigger-evals.json"
   ]
 }
