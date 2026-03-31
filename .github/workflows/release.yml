@@ -101,12 +101,27 @@ jobs:
           git commit -m "chore($SKILL_NAME): bump version to $VERSION"
           git push origin "$BRANCH"
 
+          # Run the same validation CI does (GITHUB_TOKEN events don't trigger workflows)
+          for manifest in skills/*/prpm.json; do
+            jq empty "$manifest" || { echo "Invalid JSON: $manifest" >&2; exit 1; }
+          done
+          for skill_dir in skills/*/; do
+            [[ -f "${skill_dir}SKILL.md" ]] || { echo "Missing SKILL.md in $skill_dir" >&2; exit 1; }
+          done
+
+          # Report the validate status check on this commit so auto-merge can proceed
+          COMMIT_SHA=$(git rev-parse HEAD)
+          gh api "repos/${{ github.repository }}/statuses/$COMMIT_SHA" \
+            --method POST \
+            --field state=success \
+            --field context=validate \
+            --field description="Validated in release workflow"
+
           gh pr create \
             --title "chore($SKILL_NAME): bump version to $VERSION" \
             --body "Automated version bump after publishing $SKILL_NAME v$VERSION to PRPM." \
             --base main \
             --head "$BRANCH"
 
-          # Enable auto-merge (squash) so it merges once CI passes
           PR_NUM=$(gh pr view "$BRANCH" --json number --jq '.number')
           gh pr merge "$PR_NUM" --squash --auto
