@@ -92,17 +92,33 @@ jobs:
           VERSION: ${{ steps.tag.outputs.version }}
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
+          REPO="${{ github.repository }}"
           BRANCH="chore/bump-${SKILL_NAME}-v${VERSION}"
+          FILE_PATH="$SKILL_DIR/prpm.json"
 
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          # Create branch via API
+          MAIN_SHA=$(gh api "repos/$REPO/git/ref/heads/main" --jq '.object.sha')
+          gh api "repos/$REPO/git/refs" --method POST \
+            --field ref="refs/heads/$BRANCH" \
+            --field sha="$MAIN_SHA"
 
-          git checkout -b "$BRANCH" origin/main
-          git add "$SKILL_DIR/prpm.json"
-          git commit -m "chore($SKILL_NAME): bump version to $VERSION"
-          git push origin "$BRANCH"
+          # Create signed commit via API (GitHub signs API-created commits)
+          CONTENT_B64=$(base64 -w0 "$FILE_PATH")
+          NEW_BLOB=$(gh api "repos/$REPO/git/blobs" --method POST \
+            --field encoding=base64 --field content="$CONTENT_B64" --jq '.sha')
+          TREE_SHA=$(gh api "repos/$REPO/git/commits/$MAIN_SHA" --jq '.tree.sha')
+          NEW_TREE=$(gh api "repos/$REPO/git/trees" --method POST \
+            --input - <<TREEOF | jq -r '.sha'
+          {"base_tree":"$TREE_SHA","tree":[{"path":"$FILE_PATH","mode":"100644","type":"blob","sha":"$NEW_BLOB"}]}
+          TREEOF
+          )
+          NEW_COMMIT=$(gh api "repos/$REPO/git/commits" --method POST \
+            --field message="chore($SKILL_NAME): bump version to $VERSION" \
+            --field tree="$NEW_TREE" --field "parents[]=$MAIN_SHA" --jq '.sha')
+          gh api "repos/$REPO/git/refs/heads/$BRANCH" --method PATCH \
+            --field sha="$NEW_COMMIT"
 
-          # Run the same validation CI does (GITHUB_TOKEN events don't trigger workflows)
+          # Run validation inline (GITHUB_TOKEN events don't trigger workflows)
           for manifest in skills/*/prpm.json; do
             jq empty "$manifest" || { echo "Invalid JSON: $manifest" >&2; exit 1; }
           done
@@ -110,19 +126,14 @@ jobs:
             [[ -f "${skill_dir}SKILL.md" ]] || { echo "Missing SKILL.md in $skill_dir" >&2; exit 1; }
           done
 
-          # Report the validate status check on this commit so auto-merge can proceed
-          COMMIT_SHA=$(git rev-parse HEAD)
-          gh api "repos/${{ github.repository }}/statuses/$COMMIT_SHA" \
-            --method POST \
-            --field state=success \
-            --field context=validate \
+          # Report validate status check on the signed commit
+          gh api "repos/$REPO/statuses/$NEW_COMMIT" --method POST \
+            --field state=success --field context=validate \
             --field description="Validated in release workflow"
 
-          gh pr create \
-            --title "chore($SKILL_NAME): bump version to $VERSION" \
+          # Create PR and enable auto-merge
+          gh pr create --title "chore($SKILL_NAME): bump version to $VERSION" \
             --body "Automated version bump after publishing $SKILL_NAME v$VERSION to PRPM." \
-            --base main \
-            --head "$BRANCH"
-
+            --base main --head "$BRANCH"
           PR_NUM=$(gh pr view "$BRANCH" --json number --jq '.number')
           gh pr merge "$PR_NUM" --squash --auto
