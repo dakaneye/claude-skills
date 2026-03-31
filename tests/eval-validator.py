@@ -16,17 +16,17 @@ from pathlib import Path
 REPO_ROOT = Path(__file__).resolve().parent.parent
 
 
-def validate_evals(evals_file: Path) -> list[str]:
-    """Validate reasoning evals structure. Returns list of errors."""
-    errors = []
+def validate_evals(evals_file: Path) -> tuple[list[str], int]:
+    """Validate reasoning evals structure. Returns (errors, eval_count)."""
+    errors: list[str] = []
 
     try:
         data = json.loads(evals_file.read_text())
     except json.JSONDecodeError as e:
-        return [f"invalid JSON: {e}"]
+        return [f"invalid JSON: {e}"], 0
 
     if not isinstance(data, dict):
-        return ["evals.json must be a JSON object"]
+        return ["evals.json must be a JSON object"], 0
 
     if "skill_name" not in data:
         errors.append("missing 'skill_name' field")
@@ -34,7 +34,7 @@ def validate_evals(evals_file: Path) -> list[str]:
     evals = data.get("evals", [])
     if not isinstance(evals, list):
         errors.append("'evals' must be an array")
-        return errors
+        return errors, 0
 
     if len(evals) == 0:
         errors.append("'evals' array is empty")
@@ -42,11 +42,17 @@ def validate_evals(evals_file: Path) -> list[str]:
     for i, eval_case in enumerate(evals):
         prefix = f"evals[{i}]"
 
+        if not isinstance(eval_case, dict):
+            errors.append(f"{prefix}: must be a JSON object, got {type(eval_case).__name__}")
+            continue
+
         if "id" not in eval_case:
             errors.append(f"{prefix}: missing 'id'")
 
         if "prompt" not in eval_case:
             errors.append(f"{prefix}: missing 'prompt'")
+        elif not isinstance(eval_case["prompt"], str):
+            errors.append(f"{prefix}: 'prompt' must be a string")
         elif not eval_case["prompt"].strip():
             errors.append(f"{prefix}: 'prompt' is empty")
 
@@ -58,25 +64,28 @@ def validate_evals(evals_file: Path) -> list[str]:
         else:
             for j, assertion in enumerate(assertions):
                 a_prefix = f"{prefix}.assertions[{j}]"
+                if not isinstance(assertion, dict):
+                    errors.append(f"{a_prefix}: must be a JSON object")
+                    continue
                 if "text" not in assertion:
                     errors.append(f"{a_prefix}: missing 'text'")
                 if "keywords" in assertion and not isinstance(assertion["keywords"], list):
                     errors.append(f"{a_prefix}: 'keywords' must be an array")
 
-    return errors
+    return errors, len(evals)
 
 
-def validate_trigger_evals(trigger_file: Path) -> list[str]:
-    """Validate trigger evals structure. Returns list of errors."""
-    errors = []
+def validate_trigger_evals(trigger_file: Path) -> tuple[list[str], int]:
+    """Validate trigger evals structure. Returns (errors, trigger_count)."""
+    errors: list[str] = []
 
     try:
         data = json.loads(trigger_file.read_text())
     except json.JSONDecodeError as e:
-        return [f"invalid JSON: {e}"]
+        return [f"invalid JSON: {e}"], 0
 
     if not isinstance(data, list):
-        return ["trigger-evals.json must be a JSON array"]
+        return ["trigger-evals.json must be a JSON array"], 0
 
     if len(data) == 0:
         errors.append("trigger evals array is empty")
@@ -87,8 +96,14 @@ def validate_trigger_evals(trigger_file: Path) -> list[str]:
     for i, entry in enumerate(data):
         prefix = f"trigger-evals[{i}]"
 
+        if not isinstance(entry, dict):
+            errors.append(f"{prefix}: must be a JSON object, got {type(entry).__name__}")
+            continue
+
         if "query" not in entry:
             errors.append(f"{prefix}: missing 'query'")
+        elif not isinstance(entry["query"], str):
+            errors.append(f"{prefix}: 'query' must be a string")
         elif not entry["query"].strip():
             errors.append(f"{prefix}: 'query' is empty")
 
@@ -107,10 +122,10 @@ def validate_trigger_evals(trigger_file: Path) -> list[str]:
     if not has_should_not:
         errors.append("no negative trigger cases (should_trigger: false)")
 
-    return errors
+    return errors, len(data)
 
 
-def main():
+def main() -> None:
     skills_dir = REPO_ROOT / "skills"
     if not skills_dir.exists():
         print("No skills/ directory found", file=sys.stderr)
@@ -131,27 +146,24 @@ def main():
         trigger_file = evals_dir / "trigger-evals.json"
 
         if evals_file.exists():
-            errors = validate_evals(evals_file)
+            errors, count = validate_evals(evals_file)
             if errors:
                 for e in errors:
                     print(f"  FAIL evals.json: {e}")
                 total_errors += len(errors)
             else:
-                data = json.loads(evals_file.read_text())
-                count = len(data.get("evals", []))
                 print(f"  PASS evals.json ({count} evals)")
         else:
             print(f"  SKIP evals.json (not found)")
 
         if trigger_file.exists():
-            errors = validate_trigger_evals(trigger_file)
+            errors, count = validate_trigger_evals(trigger_file)
             if errors:
                 for e in errors:
                     print(f"  FAIL trigger-evals.json: {e}")
                 total_errors += len(errors)
             else:
-                data = json.loads(trigger_file.read_text())
-                print(f"  PASS trigger-evals.json ({len(data)} triggers)")
+                print(f"  PASS trigger-evals.json ({count} triggers)")
         else:
             print(f"  SKIP trigger-evals.json (not found)")
 

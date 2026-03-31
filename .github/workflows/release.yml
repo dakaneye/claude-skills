@@ -22,12 +22,19 @@ jobs:
         id: tag
         run: |
           TAG="${GITHUB_REF#refs/tags/}"
+
+          # Validate tag format: skill-name/vX.Y.Z
+          if [[ ! "$TAG" =~ ^[a-zA-Z0-9_-]+/v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "Error: Tag does not match expected format (<skill>/v<semver>): $TAG" >&2
+            exit 1
+          fi
+
           SKILL_NAME="${TAG%%/v*}"
           VERSION="${TAG#*/v}"
           SKILL_DIR="skills/${SKILL_NAME}"
 
-          if [ ! -d "$SKILL_DIR" ]; then
-            echo "Error: Skill directory not found: $SKILL_DIR"
+          if [[ ! -d "$SKILL_DIR" ]]; then
+            echo "Error: Skill directory not found: $SKILL_DIR" >&2
             exit 1
           fi
 
@@ -37,9 +44,12 @@ jobs:
           echo "Publishing $SKILL_NAME v$VERSION from $SKILL_DIR"
 
       - name: Update version in prpm.json
+        env:
+          SKILL_DIR: ${{ steps.tag.outputs.skill_dir }}
+          VERSION: ${{ steps.tag.outputs.version }}
         run: |
-          cd "${{ steps.tag.outputs.skill_dir }}"
-          jq --arg v "${{ steps.tag.outputs.version }}" '.version = $v' prpm.json > prpm.json.tmp
+          cd "$SKILL_DIR"
+          jq --arg v "$VERSION" '.version = $v' prpm.json > prpm.json.tmp
           mv prpm.json.tmp prpm.json
 
       - name: Setup Node.js
@@ -48,22 +58,25 @@ jobs:
           node-version: '22'
 
       - name: Install PRPM
-        run: npm install -g prpm
+        run: npm install -g prpm@0.11.0
 
       - name: Configure PRPM authentication
+        env:
+          PRPM_TOKEN: ${{ secrets.PRPM_TOKEN }}
         run: |
-          cat > ~/.prpmrc << EOF
-          {
-            "registryUrl": "https://registry.prpm.dev",
-            "token": "${{ secrets.PRPM_TOKEN }}"
-          }
-          EOF
+          jq -n --arg token "$PRPM_TOKEN" \
+            '{"registryUrl": "https://registry.prpm.dev", "token": $token}' > ~/.prpmrc
+          chmod 600 ~/.prpmrc
 
       - name: Validate package
-        run: cd "${{ steps.tag.outputs.skill_dir }}" && prpm publish --dry-run
+        env:
+          SKILL_DIR: ${{ steps.tag.outputs.skill_dir }}
+        run: cd "$SKILL_DIR" && prpm publish --dry-run
 
       - name: Publish to PRPM
-        run: cd "${{ steps.tag.outputs.skill_dir }}" && prpm publish
+        env:
+          SKILL_DIR: ${{ steps.tag.outputs.skill_dir }}
+        run: cd "$SKILL_DIR" && prpm publish
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@153bb8e04406b158c6c84fc1615b65b24149a1fe # v2
@@ -72,9 +85,13 @@ jobs:
           generate_release_notes: true
 
       - name: Push version bump commit
+        env:
+          SKILL_DIR: ${{ steps.tag.outputs.skill_dir }}
+          SKILL_NAME: ${{ steps.tag.outputs.skill_name }}
+          VERSION: ${{ steps.tag.outputs.version }}
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add "${{ steps.tag.outputs.skill_dir }}/prpm.json"
-          git commit -m "chore(${{ steps.tag.outputs.skill_name }}): bump version to ${{ steps.tag.outputs.version }}" || echo "No version changes to commit"
+          git add "$SKILL_DIR/prpm.json"
+          git commit -m "chore($SKILL_NAME): bump version to $VERSION" || echo "No version changes to commit"
           git push origin HEAD:main

@@ -17,9 +17,9 @@ GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 NC='\033[0m'
 
-log_info() { echo -e "${GREEN}[INFO]${NC} $*"; }
-log_warn() { echo -e "${YELLOW}[WARN]${NC} $*"; }
-log_error() { echo -e "${RED}[ERROR]${NC} $*" >&2; }
+log_info() { printf '%b\n' "${GREEN}[INFO]${NC} $*"; }
+log_warn() { printf '%b\n' "${YELLOW}[WARN]${NC} $*"; }
+log_error() { printf '%b\n' "${RED}[ERROR]${NC} $*" >&2; }
 
 usage() {
     echo "Usage: $0 <skill-name>"
@@ -39,6 +39,13 @@ if [[ $# -lt 1 ]]; then
 fi
 
 SKILL_NAME="$1"
+
+# Validate skill name (prevent path traversal)
+if [[ ! "$SKILL_NAME" =~ ^[a-zA-Z0-9_-]+$ ]]; then
+    log_error "Invalid skill name: $SKILL_NAME"
+    exit 1
+fi
+
 SKILL_SRC="$SCRIPT_DIR/skills/$SKILL_NAME"
 TARGET_DIR="${HOME}/.claude/skills/dakaneye-${SKILL_NAME}"
 

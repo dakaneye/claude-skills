@@ -47,7 +47,7 @@ claude-skills/
 
 ## Adding a New Skill
 
-1. Create `skills/<name>/SKILL.md` with frontmatter (name, version, description with trigger phrases)
+1. Create `skills/<name>/SKILL.md` with frontmatter (name, description with trigger phrases)
 2. Create `skills/<name>/prpm.json` with package definition
 3. Create `skills/<name>/evals/evals.json` (reasoning evals) and `trigger-evals.json`
 4. Add supporting content (agents, scripts, rules, concepts, patterns) as needed

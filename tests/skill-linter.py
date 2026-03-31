@@ -13,11 +13,59 @@ Adapted from dakaclaude skill-linter.py for this repo's layout.
 import json
 import re
 import sys
+from dataclasses import dataclass, field
 from pathlib import Path
 
 
 LINE_LIMIT = 450
 REPO_ROOT = Path(__file__).resolve().parent.parent
+
+# Module-level compiled patterns
+_TRIGGER_PATTERN = re.compile(
+    r"Use (?:PROACTIVELY |this skill )?(?:when|after|for|to)"
+    r"|activates when"
+    r"|Trigger on"
+    r"|Invoke proactively",
+    re.IGNORECASE,
+)
+_STEP_PATTERN = re.compile(r"(?:Step \d|Phase \d|### \d)")
+_FRAMEWORK_PATTERN = re.compile(
+    r"(?:Framework|Principle|Dimension|Scorecard|Matrix|Rubric)",
+    re.IGNORECASE,
+)
+
+
+@dataclass(frozen=True, slots=True)
+class LintResult:
+    name: str
+    path: str
+    line_count: int
+    has_version: bool
+    has_triggers: bool
+    over_limit: bool
+    structure: str
+    has_reasoning_evals: bool
+    has_trigger_evals: bool
+    issues: tuple[str, ...] = field(default_factory=tuple)
+
+    @property
+    def passed(self) -> bool:
+        return len(self.issues) == 0
+
+    def to_dict(self) -> dict:
+        return {
+            "name": self.name,
+            "path": self.path,
+            "line_count": self.line_count,
+            "has_version": self.has_version,
+            "has_triggers": self.has_triggers,
+            "over_limit": self.over_limit,
+            "structure": self.structure,
+            "has_reasoning_evals": self.has_reasoning_evals,
+            "has_trigger_evals": self.has_trigger_evals,
+            "issues": list(self.issues),
+            "pass": self.passed,
+        }
 
 
 def find_skills() -> list[Path]:
@@ -28,42 +76,29 @@ def find_skills() -> list[Path]:
     return sorted(skills_dir.rglob("SKILL.md"))
 
 
-def lint_skill(skill_md: Path) -> dict:
+def lint_skill(skill_md: Path) -> LintResult:
     content = skill_md.read_text()
     lines = content.splitlines()
     line_count = len(lines)
 
-    # Derive name from parent directory
     name = skill_md.parent.name
 
     # Check version in prpm.json (PRPM forbids version in SKILL.md frontmatter)
     prpm_json = skill_md.parent / "prpm.json"
     has_version = False
+    prpm_valid = True
     if prpm_json.exists():
         try:
             pkg = json.loads(prpm_json.read_text())
             has_version = bool(pkg.get("version"))
         except json.JSONDecodeError:
-            pass
+            prpm_valid = False
 
-    # Check description with trigger language
-    has_triggers = bool(re.search(
-        r"Use (?:PROACTIVELY |this skill )?(?:when|after|for|to)"
-        r"|activates when"
-        r"|Trigger on"
-        r"|Invoke proactively",
-        content, re.IGNORECASE,
-    ))
-
-    # Line count check
+    has_triggers = bool(_TRIGGER_PATTERN.search(content))
     over_limit = line_count > LINE_LIMIT
 
-    # Structure classification
-    step_count = len(re.findall(r"(?:Step \d|Phase \d|### \d)", content))
-    framework_count = len(re.findall(
-        r"(?:Framework|Principle|Dimension|Scorecard|Matrix|Rubric)",
-        content, re.IGNORECASE,
-    ))
+    step_count = len(_STEP_PATTERN.findall(content))
+    framework_count = len(_FRAMEWORK_PATTERN.findall(content))
 
     if step_count > framework_count and step_count > 3:
         structure = "procedural"
@@ -72,14 +107,15 @@ def lint_skill(skill_md: Path) -> dict:
     else:
         structure = "mixed"
 
-    # Check evals exist
     evals_dir = skill_md.parent / "evals"
     has_reasoning_evals = (evals_dir / "evals.json").exists()
     has_trigger_evals = (evals_dir / "trigger-evals.json").exists()
 
-    issues = []
+    issues: list[str] = []
     if not has_version:
         issues.append("missing version field")
+    if not prpm_valid:
+        issues.append("prpm.json is invalid JSON")
     if not has_triggers:
         issues.append("no trigger phrases in description")
     if over_limit:
@@ -89,22 +125,21 @@ def lint_skill(skill_md: Path) -> dict:
     if not has_trigger_evals:
         issues.append("missing evals/trigger-evals.json")
 
-    return {
-        "name": name,
-        "path": str(skill_md.relative_to(REPO_ROOT)),
-        "line_count": line_count,
-        "has_version": has_version,
-        "has_triggers": has_triggers,
-        "over_limit": over_limit,
-        "structure": structure,
-        "has_reasoning_evals": has_reasoning_evals,
-        "has_trigger_evals": has_trigger_evals,
-        "issues": issues,
-        "pass": len(issues) == 0,
-    }
+    return LintResult(
+        name=name,
+        path=str(skill_md.relative_to(REPO_ROOT)),
+        line_count=line_count,
+        has_version=has_version,
+        has_triggers=has_triggers,
+        over_limit=over_limit,
+        structure=structure,
+        has_reasoning_evals=has_reasoning_evals,
+        has_trigger_evals=has_trigger_evals,
+        issues=tuple(issues),
+    )
 
 
-def main():
+def main() -> None:
     skills = find_skills()
     if not skills:
         print("No SKILL.md files found under skills/", file=sys.stderr)
@@ -113,7 +148,7 @@ def main():
     results = [lint_skill(s) for s in skills]
 
     total = len(results)
-    passing = sum(1 for r in results if r["pass"])
+    passing = sum(1 for r in results if r.passed)
     failing = total - passing
 
     report = {
@@ -123,7 +158,7 @@ def main():
             "failing": failing,
             "line_limit": LINE_LIMIT,
         },
-        "skills": results,
+        "skills": [r.to_dict() for r in results],
     }
 
     print(json.dumps(report, indent=2))

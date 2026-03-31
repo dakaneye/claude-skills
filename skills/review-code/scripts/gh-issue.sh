@@ -298,7 +298,10 @@ format_timestamp() {
   local timestamp="$1"
 
   if [[ -n "${timestamp}" && "${timestamp}" != "null" ]]; then
-    date -u -j -f "%Y-%m-%dT%H:%M:%SZ" "${timestamp}" "+%Y-%m-%d %H:%M:%S UTC" 2>/dev/null || echo "${timestamp}"
+    # BSD (macOS) then GNU (Linux) date fallback
+    date -u -j -f "%Y-%m-%dT%H:%M:%SZ" "${timestamp}" "+%Y-%m-%d %H:%M:%S UTC" 2>/dev/null \
+      || date -u -d "${timestamp}" "+%Y-%m-%d %H:%M:%S UTC" 2>/dev/null \
+      || echo "${timestamp}"
   else
     echo "N/A"
   fi

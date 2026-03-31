@@ -1,14 +1,14 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 # Get PR Context Script
 # Gathers comprehensive PR information from GitHub and saves to structured directory
 # Supports subcommands for resolution tracking and status checking
 
-set -euo pipefail
+set -Eeuo pipefail
 
 # Source the PR context library
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-source "$SCRIPT_DIR/pr-context-lib.sh"
+source "$SCRIPT_DIR/pr-context-lib.sh" || { printf 'Error: pr-context-lib.sh not found\n' >&2; exit 1; }
 
 # Global state
 PR_NUM=""
@@ -78,7 +78,7 @@ parse_args() {
                 ;;
             -r|--repo)
                 if [[ -z "${2:-}" ]]; then
-                    echo -e "${RED}Error: Option $1 requires an argument${NC}" >&2
+                    printf '%b\n' "${RED}Error: Option $1 requires an argument${NC}" >&2
                     exit 1
                 fi
                 REPO_OVERRIDE="$2"
@@ -90,7 +90,7 @@ parse_args() {
                 ;;
             --commit)
                 if [[ -z "${2:-}" ]]; then
-                    echo -e "${RED}Error: Option $1 requires an argument${NC}" >&2
+                    printf '%b\n' "${RED}Error: Option $1 requires an argument${NC}" >&2
                     exit 1
                 fi
                 COMMIT_SHA="$2"
@@ -100,7 +100,7 @@ parse_args() {
                 usage
                 ;;
             -*)
-                echo -e "${RED}Error: Unknown option: $1${NC}" >&2
+                printf '%b\n' "${RED}Error: Unknown option: $1${NC}" >&2
                 exit 1
                 ;;
             *)
@@ -117,7 +117,7 @@ parse_args() {
     if [[ -n "$PR_NUM" && "$PR_NUM" =~ ^https://github.com/([^/]+)/([^/]+)/pull/([0-9]+)(/.*)?$ ]]; then
         REPO_OVERRIDE="${BASH_REMATCH[1]}/${BASH_REMATCH[2]}"
         PR_NUM="${BASH_REMATCH[3]}"
-        echo -e "${BLUE}Detected PR URL: $REPO_OVERRIDE #$PR_NUM${NC}"
+        printf '%b\n' "${BLUE}Detected PR URL: $REPO_OVERRIDE #$PR_NUM${NC}"
     fi
 }
 
@@ -129,7 +129,7 @@ get_repo_info() {
             REPO="${BASH_REMATCH[2]}"
             return 0
         else
-            echo -e "${RED}Error: Invalid repo format: $REPO_OVERRIDE${NC}" >&2
+            printf '%b\n' "${RED}Error: Invalid repo format: $REPO_OVERRIDE${NC}" >&2
             exit 1
         fi
     fi
@@ -141,17 +141,17 @@ determine_pr() {
     if [[ -z "$PR_NUM" ]]; then
         local branch
         branch=$(git branch --show-current 2>/dev/null || echo "")
-        echo -e "${YELLOW}Current branch: $branch${NC}"
+        printf '%b\n' "${YELLOW}Current branch: $branch${NC}"
 
         PR_NUM=$(gh pr status --json currentBranch -q '.currentBranch.number' 2>/dev/null || echo "")
 
         if [[ -z "$PR_NUM" ]]; then
-            echo -e "${RED}No PR found for current branch${NC}"
+            printf '%b\n' "${RED}No PR found for current branch${NC}"
             echo "Usage: $0 [PR_NUMBER]"
             exit 1
         fi
     fi
-    echo -e "${GREEN}PR #$PR_NUM from $OWNER/$REPO${NC}"
+    printf '%b\n' "${GREEN}PR #$PR_NUM from $OWNER/$REPO${NC}"
 }
 
 # Fetch and save PR data to directory structure
@@ -162,7 +162,7 @@ fetch_pr_context() {
     # Create directory structure
     create_pr_directory "$OWNER" "$REPO" "$PR_NUM"
 
-    echo -e "${BLUE}Fetching PR #$PR_NUM...${NC}"
+    printf '%b\n' "${BLUE}Fetching PR #$PR_NUM...${NC}"
 
     # Fetch PR metadata
     local pr_json
@@ -174,8 +174,8 @@ fetch_pr_context() {
     pr_updated_at=$(echo "$pr_json" | jq -r '.updatedAt // ""')
 
     if [[ "$FORCE_REFRESH" != "true" ]] && ! is_pr_stale "$OWNER" "$REPO" "$PR_NUM" "$pr_updated_at"; then
-        echo -e "${GREEN}Using cached data (PR not modified since last fetch)${NC}"
-        echo -e "${BLUE}Use --refresh to force update${NC}"
+        printf '%b\n' "${GREEN}Using cached data (PR not modified since last fetch)${NC}"
+        printf '%b\n' "${BLUE}Use --refresh to force update${NC}"
         # Still generate overview and show it
         generate_overview "$OWNER" "$REPO" "$PR_NUM"
         cat "$pr_dir/overview.md"
@@ -192,13 +192,13 @@ fetch_pr_context() {
     write_files_json "$OWNER" "$REPO" "$PR_NUM" "$files_json"
 
     # Fetch and write diff
-    echo -e "${BLUE}Fetching diff...${NC}"
+    printf '%b\n' "${BLUE}Fetching diff...${NC}"
     local diff
     diff=$(gh pr diff "$PR_NUM" --repo "$OWNER/$REPO" 2>/dev/null || echo "")
     write_diff "$OWNER" "$REPO" "$PR_NUM" "$diff"
 
     # Fetch reviews and threads via GraphQL
-    echo -e "${BLUE}Fetching reviews and threads...${NC}"
+    printf '%b\n' "${BLUE}Fetching reviews and threads...${NC}"
     local reviews_data
     reviews_data=$(fetch_reviews_and_threads "$OWNER" "$REPO" "$PR_NUM")
 
@@ -209,7 +209,7 @@ fetch_pr_context() {
     write_discussion_comments "$OWNER" "$REPO" "$PR_NUM" "$reviews_data"
 
     # Fetch CI status
-    echo -e "${BLUE}Fetching CI status...${NC}"
+    printf '%b\n' "${BLUE}Fetching CI status...${NC}"
     local head_sha
     head_sha=$(echo "$pr_json" | jq -r '.headRefOid // ""')
     if [[ -z "$head_sha" ]]; then
@@ -231,7 +231,7 @@ fetch_pr_context() {
     write_status "$OWNER" "$REPO" "$PR_NUM" "complete"
 
     echo ""
-    echo -e "${GREEN}✓ Context saved to: $pr_dir${NC}"
+    printf '%b\n' "${GREEN}✓ Context saved to: $pr_dir${NC}"
     echo ""
 
     # Output overview to terminal
@@ -258,9 +258,9 @@ output_terminal_summary() {
         deletions=$(jq -r '.stats.deletions // 0' "$pr_dir/metadata.json")
         files=$(jq -r '.stats.changedFiles // 0' "$pr_dir/metadata.json")
 
-        echo -e "PR #$PR_NUM: $title"
-        echo -e "State: $state | Author: @$author"
-        echo -e "Stats: +$additions -$deletions across $files files"
+        printf '%b\n' "PR #$PR_NUM: $title"
+        printf '%b\n' "State: $state | Author: @$author"
+        printf '%b\n' "Stats: +$additions -$deletions across $files files"
         echo ""
     fi
 
@@ -292,13 +292,13 @@ output_terminal_summary() {
     fi
 
     echo ""
-    echo -e "${BLUE}Full context: $pr_dir${NC}"
+    printf '%b\n' "${BLUE}Full context: $pr_dir${NC}"
 }
 
 # Handle mark-addressed subcommand
 handle_mark_addressed() {
     if [[ -z "$THREAD_ID" ]]; then
-        echo -e "${RED}Error: Thread ID required${NC}"
+        printf '%b\n' "${RED}Error: Thread ID required${NC}"
         echo "Usage: $0 mark-addressed THREAD_ID [--commit SHA]"
         exit 1
     fi
@@ -321,14 +321,14 @@ handle_pending() {
 main() {
     # Check for gh CLI
     if ! command -v gh &> /dev/null; then
-        echo -e "${RED}Error: GitHub CLI (gh) is not installed${NC}"
+        printf '%b\n' "${RED}Error: GitHub CLI (gh) is not installed${NC}"
         echo "Install it from: https://cli.github.com/"
         exit 1
     fi
 
     # Check gh auth status
     if ! gh auth status &> /dev/null; then
-        echo -e "${RED}Error: Not authenticated with GitHub${NC}"
+        printf '%b\n' "${RED}Error: Not authenticated with GitHub${NC}"
         echo "Run: gh auth login"
         exit 1
     fi

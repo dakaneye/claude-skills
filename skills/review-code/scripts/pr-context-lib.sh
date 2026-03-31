@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 # PR Context Library
 # Shared functions for managing PR context directory structure
@@ -103,14 +103,17 @@ write_status() {
             ;;
     esac
 
-    cat > "$tmp_file" <<EOF
-{
-  "state": "$state",
-  "lastFetchStarted": "${last_started:-$now}",
-  "lastFetchCompleted": ${last_completed:+\"$last_completed\"}${last_completed:-null},
-  "error": ${error:+\"$error\"}${error:-null}
-}
-EOF
+    jq -n \
+        --arg state "$state" \
+        --arg started "${last_started:-$now}" \
+        --arg completed "${last_completed:-}" \
+        --arg err "${error:-}" \
+        '{
+            state: $state,
+            lastFetchStarted: $started,
+            lastFetchCompleted: (if $completed == "" then null else $completed end),
+            error: (if $err == "" then null else $err end)
+        }' > "$tmp_file"
 
     mv "$tmp_file" "$status_file"
 }
@@ -289,7 +292,8 @@ is_pr_stale() {
 
     # Also check if more than 1 hour old
     local fetched_epoch
-    fetched_epoch=$(date -j -f "%Y-%m-%dT%H:%M:%SZ" "$local_fetched" +%s 2>/dev/null || echo "0")
+    # BSD (macOS) then GNU (Linux) date fallback
+    fetched_epoch=$(date -j -f "%Y-%m-%dT%H:%M:%SZ" "$local_fetched" +%s 2>/dev/null || date -d "$local_fetched" +%s 2>/dev/null || echo "0")
     local now_epoch
     now_epoch=$(date +%s)
     local age=$((now_epoch - fetched_epoch))
@@ -328,9 +332,9 @@ atomic_json_merge() {
 #   $1 - section title
 #######################################
 section() {
-    echo -e "\n${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
-    echo -e "${GREEN}$1${NC}"
-    echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+    printf '%b\n' "\n${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+    printf '%b\n' "${GREEN}$1${NC}"
+    printf '%b\n' "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
 }
 
 #######################################
@@ -348,7 +352,7 @@ parse_repo_from_git() {
     elif git remote get-url origin &>/dev/null; then
         remote_url=$(git remote get-url origin)
     else
-        echo -e "${RED}Error: No git remotes found${NC}" >&2
+        printf '%b\n' "${RED}Error: No git remotes found${NC}" >&2
         return 1
     fi
 
@@ -360,7 +364,7 @@ parse_repo_from_git() {
         OWNER="${BASH_REMATCH[1]}"
         REPO="${BASH_REMATCH[2]%.git}"
     else
-        echo -e "${RED}Error: Not a GitHub repository${NC}" >&2
+        printf '%b\n' "${RED}Error: Not a GitHub repository${NC}" >&2
         return 1
     fi
 
@@ -740,7 +744,7 @@ mark_thread_addressed() {
     local index_file="$pr_dir/threads/index.json"
 
     if [[ ! -f "$index_file" ]]; then
-        echo -e "${RED}Error: No thread index found. Run /pr-context first.${NC}" >&2
+        printf '%b\n' "${RED}Error: No thread index found. Run /pr-context first.${NC}" >&2
         return 1
     fi
 
@@ -748,7 +752,7 @@ mark_thread_addressed() {
     local thread_exists
     thread_exists=$(jq --arg id "$thread_id" '.threads[$id] // null' "$index_file")
     if [[ "$thread_exists" == "null" ]]; then
-        echo -e "${RED}Error: Thread $thread_id not found${NC}" >&2
+        printf '%b\n' "${RED}Error: Thread $thread_id not found${NC}" >&2
         return 1
     fi
 
@@ -766,7 +770,7 @@ mark_thread_addressed() {
     ' "$index_file" > "$tmp_file"
 
     mv "$tmp_file" "$index_file"
-    echo -e "${GREEN}Marked thread $thread_id as addressed${NC}"
+    printf '%b\n' "${GREEN}Marked thread $thread_id as addressed${NC}"
 }
 
 #######################################
@@ -787,7 +791,7 @@ get_pending_items() {
     local threads_index="$pr_dir/threads/index.json"
     local reviews_index="$pr_dir/reviews/index.json"
 
-    echo -e "${BLUE}Pending Action Items for PR #${pr_num}${NC}"
+    printf '%b\n' "${BLUE}Pending Action Items for PR #${pr_num}${NC}"
     echo ""
 
     # Unresolved threads
@@ -795,7 +799,7 @@ get_pending_items() {
         local pending_count
         pending_count=$(jq '.summary.pending // 0' "$threads_index")
         if [[ "$pending_count" -gt 0 ]]; then
-            echo -e "${YELLOW}Unresolved Threads: $pending_count${NC}"
+            printf '%b\n' "${YELLOW}Unresolved Threads: $pending_count${NC}"
             jq -r '
                 .threads | to_entries[] |
                 select(.value.isResolved == false) |
@@ -810,7 +814,7 @@ get_pending_items() {
         local changes_requested
         changes_requested=$(jq '.summary.changesRequested // 0' "$reviews_index")
         if [[ "$changes_requested" -gt 0 ]]; then
-            echo -e "${YELLOW}Changes Requested: $changes_requested${NC}"
+            printf '%b\n' "${YELLOW}Changes Requested: $changes_requested${NC}"
             jq -r '
                 .reviews | to_entries[] |
                 select(.value.state == "CHANGES_REQUESTED") |
@@ -825,7 +829,7 @@ get_pending_items() {
         local failed_runs
         failed_runs=$(jq '[.runs[]? | select(.conclusion == "failure")] | length' "$ci_index")
         if [[ "$failed_runs" -gt 0 ]]; then
-            echo -e "${RED}Failing CI Runs: $failed_runs${NC}"
+            printf '%b\n' "${RED}Failing CI Runs: $failed_runs${NC}"
             jq -r '.runs[] | select(.conclusion == "failure") | "  \(.name) (\(.createdAt))"' "$ci_index"
         fi
     fi
@@ -1300,6 +1304,6 @@ detect_and_copy_planning_docs() {
     fi
 
     if [[ "$copied_count" -gt 0 ]]; then
-        echo -e "${GREEN}Copied $copied_count planning doc(s) to $plans_dir${NC}"
+        printf '%b\n' "${GREEN}Copied $copied_count planning doc(s) to $plans_dir${NC}"
     fi
 }

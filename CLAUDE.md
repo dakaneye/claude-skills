@@ -10,7 +10,7 @@ Monorepo for independently publishable PRPM skill packages. Each skill lives und
 claude-skills/
 ├── skills/
 │   └── <skill-name>/
-│       ├── SKILL.md           # Skill entry point (version in frontmatter)
+│       ├── SKILL.md           # Skill entry point (no version — PRPM forbids it)
 │       ├── prpm.json          # PRPM package definition
 │       ├── evals/             # Reasoning and trigger evals
 │       ├── agents/            # Specialized subagents
@@ -103,7 +103,7 @@ gh secret set PRPM_TOKEN --repo dakaneye/claude-skills < <(jq -r '.token' ~/.prp
 
 ## Adding a New Skill
 
-1. Create `skills/<name>/SKILL.md` with frontmatter (name, version, description)
+1. Create `skills/<name>/SKILL.md` with frontmatter (name, description with trigger phrases)
 2. Create `skills/<name>/prpm.json` with package definition
 3. Create `skills/<name>/evals/evals.json` and `trigger-evals.json`
 4. Add any agents, scripts, rules, concepts, patterns under the skill directory

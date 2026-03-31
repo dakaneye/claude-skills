@@ -344,10 +344,7 @@ jobs:
           jq --arg v "${{ steps.tag.outputs.version }}" '.version = $v' prpm.json > prpm.json.tmp
           mv prpm.json.tmp prpm.json
 
-      - name: Update version in SKILL.md frontmatter
-        run: |
-          cd "${{ steps.tag.outputs.skill_dir }}"
-          sed -i "s/^version: .*/version: ${{ steps.tag.outputs.version }}/" SKILL.md
+      # NOTE: PRPM forbids version in SKILL.md frontmatter — only prpm.json is updated
 
       - name: Setup Node.js
         uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
@@ -394,7 +391,7 @@ git add .github/workflows/release.yml
 git commit -m "ci: rewrite release workflow for per-skill tag-prefix publishing
 
 Tags like review-code/v1.0.5 trigger publish for that skill only.
-Workflow auto-bumps version in prpm.json and SKILL.md frontmatter."
+Workflow auto-bumps version in prpm.json via tag prefix."
 ```
 
 ---
@@ -593,7 +590,7 @@ Each skill directory contains everything it needs. No shared code between skills
 
 ### Versioning
 - Tags drive releases: `<skill-name>/v<semver>` (e.g., `review-code/v1.0.5`)
-- Release workflow auto-bumps version in `prpm.json` and `SKILL.md` frontmatter
+- Release workflow auto-bumps version in `prpm.json` (PRPM forbids version in SKILL.md frontmatter)
 - Never manually edit version fields
 
 ### Scripts

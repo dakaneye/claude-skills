@@ -10,7 +10,7 @@ Transform `dakaneye/claude-review-code` (single-skill repo) into `dakaneye/claud
 claude-skills/
 ├── skills/
 │   └── review-code/
-│       ├── SKILL.md                    # version in frontmatter, updated by release workflow
+│       ├── SKILL.md                    # skill entry point (no version — PRPM forbids it)
 │       ├── prpm.json                   # dakaneye-review-code package definition
 │       ├── evals/
 │       │   ├── evals.json
@@ -100,8 +100,7 @@ The release workflow:
 1. Extracts skill name and version from the tag
 2. Checks out the repo
 3. Updates `version` in `skills/<name>/prpm.json`
-4. Updates `version` in `skills/<name>/SKILL.md` frontmatter
-5. Runs `prpm publish` from the skill directory
+4. Runs `prpm publish` from the skill directory
 6. Creates a GitHub Release
 7. Pushes a version-bump commit back to main
 
