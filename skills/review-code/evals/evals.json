@@ -1,0 +1,31 @@
+{
+  "skill_name": "review-code",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Review this Python function for issues:\n\ndef process(data):\n    try:\n        result = json.loads(data)\n    except:\n        return {}\n    return result",
+      "expected_output": "bare except clause",
+      "assertions": [
+        {
+          "text": "identifies bare except as an issue",
+          "keywords": ["except"]
+        },
+        {
+          "text": "identifies silent failure pattern",
+          "keywords": ["silent", "swallow", "empty", "error"]
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "Review this Go code:\n\nfunc Process(item Item) <-chan Result {\n    ch := make(chan Result, 1)\n    go func() { ch <- doWork(item); close(ch) }()\n    return ch\n}",
+      "expected_output": "channel wrapping synchronous work",
+      "assertions": [
+        {
+          "text": "identifies unnecessary channel/goroutine wrapper",
+          "keywords": ["channel", "goroutine", "synchronous", "unnecessary"]
+        }
+      ]
+    }
+  ]
+}

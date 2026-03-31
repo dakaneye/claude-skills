@@ -1,0 +1,7 @@
+[
+  {"query": "review this Python function for issues", "should_trigger": true},
+  {"query": "do a security audit of this code", "should_trigger": true},
+  {"query": "review the changes in this PR", "should_trigger": true},
+  {"query": "help me write a new feature", "should_trigger": false},
+  {"query": "fix this GitHub Advanced Security alert", "should_trigger": false}
+]
