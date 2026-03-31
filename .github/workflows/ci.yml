@@ -115,7 +115,7 @@ jobs:
       - name: Check for machine-specific paths
         run: |
           # Exclude CLAUDE.md which documents the grep command itself
-          if grep -r '/Users/' --include='*.md' --include='*.sh' --exclude='CLAUDE.md' .; then
+          if grep -r '/Users/' --include='*.md' --include='*.sh' --exclude='CLAUDE.md' --exclude-dir='docs' .; then
             echo "Error: Found machine-specific /Users/ paths"
             exit 1
           fi

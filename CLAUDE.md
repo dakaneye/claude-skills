@@ -38,8 +38,8 @@ Each skill directory contains everything it needs. No shared code between skills
 
 ### Versioning
 - Tags drive releases: `<skill-name>/v<semver>` (e.g., `review-code/v1.0.5`)
-- Release workflow auto-bumps version in `prpm.json` and `SKILL.md` frontmatter
-- Never manually edit version fields
+- Release workflow auto-bumps version in `prpm.json` (PRPM forbids version in SKILL.md frontmatter)
+- Never manually edit the version field
 
 ### Scripts
 - All scripts use `set -Eeuo pipefail`
@@ -87,7 +87,7 @@ git push origin review-code/v1.0.5
 ```
 
 CI will:
-1. Update version in `skills/review-code/prpm.json` and `SKILL.md`
+1. Update version in `skills/review-code/prpm.json`
 2. Publish to PRPM
 3. Create GitHub Release
 4. Push version bump commit to main

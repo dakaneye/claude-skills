@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
-"""Lint SKILL.md files against skill framework conventions.
+"""Lint skills against skill framework conventions.
 
 Checks:
-- Version field present
-- Description with trigger phrases
+- Version field present in prpm.json
+- Description with trigger phrases in SKILL.md
 - Line count within bounds
 - Structure classification (procedural vs framework)
 
@@ -36,10 +36,15 @@ def lint_skill(skill_md: Path) -> dict:
     # Derive name from parent directory
     name = skill_md.parent.name
 
-    # Check version (in frontmatter or body)
-    has_version = bool(re.search(
-        r"(?:\*\*)?[Vv]ersion:?(?:\*\*)?:?\s*\d+\.\d+", content,
-    ))
+    # Check version in prpm.json (PRPM forbids version in SKILL.md frontmatter)
+    prpm_json = skill_md.parent / "prpm.json"
+    has_version = False
+    if prpm_json.exists():
+        try:
+            pkg = json.loads(prpm_json.read_text())
+            has_version = bool(pkg.get("version"))
+        except json.JSONDecodeError:
+            pass
 
     # Check description with trigger language
     has_triggers = bool(re.search(

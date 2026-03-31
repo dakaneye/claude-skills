@@ -1,6 +1,5 @@
 ---
 name: review-code
-version: 1.0.4
 description: Comprehensive code review with language-specific expertise. Use PROACTIVELY after writing code, when reviewing PRs, or for security audits. Analyzes for correctness, security, maintainability, and test coverage.
 ---
 
