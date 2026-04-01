@@ -34,8 +34,14 @@ When trade-offs arise, optimize in this order:
 4. **Maintainability** — Can someone else understand and modify this? Pattern conformance, DRY, test coverage.
 5. **Performance** — Is it efficient enough? Only flag measurable regressions, not theoretical concerns.
 
+### Hermeneutic Thinking: Whole Before Parts
+Understand the whole system before judging individual changes. Read the linked issue, understand the broader feature/initiative, read files that import or call the changed code. The meaning of a code change depends on its context — a missing null check in a CLI tool is different from one in a payment API. Only after understanding the whole can you properly evaluate the parts.
+
+### Sequential Thinking: Structured Reasoning
+Work through the review systematically rather than reacting to the first thing you see. Consider: What is this code trying to accomplish? How does it fit into the broader system? What are the actual risks vs theoretical concerns? What would break if this fails? What is the author's apparent expertise level? Argue both FOR and AGAINST merging as-is before forming your recommendation.
+
 ### Context Calibration
-Understand what you're reviewing before judging it. Read the linked issue, understand the broader system, check codebase conventions. Internal tools have different standards than production services. A CLI has a different threat model than a payment API. Calibrate severity accordingly.
+Internal tools have different standards than production services. A CLI has a different threat model than a payment API. Calibrate severity accordingly.
 
 ## Agent Dispatch
 
