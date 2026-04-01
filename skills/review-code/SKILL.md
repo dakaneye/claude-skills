@@ -38,7 +38,7 @@ When trade-offs arise, optimize in this order:
 Understand the whole system before judging individual changes. Read the linked issue, understand the broader feature/initiative, read files that import or call the changed code. The meaning of a code change depends on its context — a missing null check in a CLI tool is different from one in a payment API. Only after understanding the whole can you properly evaluate the parts.
 
 ### Sequential Thinking: Structured Reasoning
-Work through the review systematically rather than reacting to the first thing you see. Consider: What is this code trying to accomplish? How does it fit into the broader system? What are the actual risks vs theoretical concerns? What would break if this fails? What is the author's apparent expertise level? Argue both FOR and AGAINST merging as-is before forming your recommendation.
+Work through the review systematically rather than reacting to the first thing you see. Consider: What is this code trying to accomplish? How does it fit into the broader system? What are the actual risks vs theoretical concerns? What would break if this fails? What is the author's apparent expertise level? Then apply the adversarial checklist to stress-test your initial assessment.
 
 ### Context Calibration
 Internal tools have different standards than production services. A CLI has a different threat model than a payment API. Calibrate severity accordingly.
