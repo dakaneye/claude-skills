@@ -80,10 +80,10 @@ jobs:
         run: cd "$SKILL_DIR" && prpm publish
 
       - name: Create GitHub Release
-        uses: softprops/action-gh-release@153bb8e04406b158c6c84fc1615b65b24149a1fe # v2
+        uses: dakaneye/hookshot/release-pilot@v1
         with:
-          name: "${{ steps.tag.outputs.skill_name }} v${{ steps.tag.outputs.version }}"
-          generate_release_notes: true
+          anthropic-api-key: ${{ secrets.ANTHROPIC_API_KEY }}
+          args: "--tag ${{ steps.tag.outputs.skill_name }}/v${{ steps.tag.outputs.version }}"
 
       - name: Create version bump PR
         env:

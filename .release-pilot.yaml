@@ -1,0 +1,5 @@
+tag-prefix: review-code/
+sub-dir: skills/review-code/
+
+notes:
+  include-diffs: true
