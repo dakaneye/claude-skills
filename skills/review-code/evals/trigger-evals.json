@@ -1,7 +1,22 @@
 [
-  {"query": "review this Python function for issues", "should_trigger": true},
-  {"query": "do a security audit of this code", "should_trigger": true},
-  {"query": "review the changes in this PR", "should_trigger": true},
-  {"query": "help me write a new feature", "should_trigger": false},
-  {"query": "fix this GitHub Advanced Security alert", "should_trigger": false}
+  {"query": "hey can you review the changes in PR #847? it's a new caching layer for the inventory service and i want to make sure we're not missing edge cases around cache invalidation", "should_trigger": true},
+  {"query": "I just pushed a fix for the login timeout bug to dakaneye/fix-login-timeout. Can you take a look before I request review from the team?", "should_trigger": true},
+  {"query": "review this Go function for issues:\n\nfunc Process(items []Item) error {\n    for _, item := range items {\n        if err := handle(item); err != nil {\n            return err\n        }\n    }\n    return nil\n}", "should_trigger": true},
+  {"query": "do a security audit of the authentication middleware in src/middleware/auth.ts — we're about to go to production and I want a second pair of eyes on the JWT validation", "should_trigger": true},
+  {"query": "I need you to review chainguard-dev/apko#312. It changes how APK packages are resolved and I'm worried about backwards compatibility with existing configs", "should_trigger": true},
+  {"query": "/review-code https://github.com/chainguard-dev/melange/pull/1456", "should_trigger": true},
+  {"query": "take a look at the diff on my current branch and tell me if there are any obvious problems before i open a PR", "should_trigger": true},
+  {"query": "can you review the database migration in db/migrations/045_add_status_column.sql? i want to make sure it's safe for a rolling deploy", "should_trigger": true},
+  {"query": "review my batch processing changes — i refactored OrderProcessor.java and i'm nervous about the error handling in the new retry loop", "should_trigger": true},
+  {"query": "we got a GAS alert on the main branch for CVE-2024-1234 in our dependency tree. can you help me fix it?", "should_trigger": false},
+  {"query": "write unit tests for the UserService class in src/services/user.ts — we need at least 80% coverage for the new search endpoint", "should_trigger": false},
+  {"query": "can you explain how the circuit breaker pattern works in our notification service? I'm trying to understand the retry logic", "should_trigger": false},
+  {"query": "refactor the PaymentProcessor to use the strategy pattern instead of the switch statement. keep the same behavior.", "should_trigger": false},
+  {"query": "check if the CI checks are passing on PR #234 — the build seems stuck and I can't tell if it's a flaky test or a real failure", "should_trigger": false},
+  {"query": "help me write a new endpoint for the admin API that lets us bulk-delete inactive users older than 90 days", "should_trigger": false},
+  {"query": "can you review my quarterly goals and tell me if they're specific enough? I have 'improve system reliability' as one of them", "should_trigger": false},
+  {"query": "investigate why the webhook handler is dropping events in production — we're seeing gaps in our payment reconciliation", "should_trigger": false},
+  {"query": "create a PR from my current branch to main with a good description of the caching changes", "should_trigger": false},
+  {"query": "I need to respond to the review comments on my PR — can you help me address the feedback about error handling?", "should_trigger": false},
+  {"query": "run the linter and fix any issues it finds in the src/ directory", "should_trigger": false}
 ]
