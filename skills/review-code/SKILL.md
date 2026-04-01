@@ -62,6 +62,7 @@ Count meaningful LOC (exclude generated files, lockfiles, snapshots), then spawn
 | Java | `java-pro` | INVEST |
 | Python | `python-pro` | TYPED |
 | Bash | `bash-pro` | VEST |
+| Rust | `rust-pro` | BORROWS |
 | Other | `code-reviewer` | General |
 
 ### Agent Handoff Specification
