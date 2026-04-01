@@ -1,6 +1,6 @@
 {
   "name": "dakaneye-review-code",
-  "version": "2.0.0",
+  "version": "2.1.0",
   "description": "Comprehensive code review skill with language-specific expertise, 14-dimension scorecard, AI-spray detection, and staff-level analysis. Supports Go (DRIVEC), Node.js (STREAMS), Java (INVEST), Python (TYPED), Bash (VEST), Rust (BORROWS), and Terraform (STATELOCK).",
   "author": "dakaneye",
   "license": "MIT",

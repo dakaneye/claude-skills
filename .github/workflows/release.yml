@@ -77,7 +77,15 @@ jobs:
       - name: Publish to PRPM
         env:
           SKILL_DIR: ${{ steps.tag.outputs.skill_dir }}
-        run: cd "$SKILL_DIR" && prpm publish
+        run: |
+          cd "$SKILL_DIR"
+          output=$(prpm publish 2>&1) && exit 0
+          if echo "$output" | grep -q "Version already exists"; then
+            echo "Version already published — skipping (idempotent)"
+          else
+            echo "$output" >&2
+            exit 1
+          fi
 
       - name: Create GitHub Release
         uses: dakaneye/hookshot/release-pilot@v1
