@@ -3,27 +3,453 @@
   "evals": [
     {
       "id": 1,
-      "prompt": "Review this Python function for issues:\n\ndef process(data):\n    try:\n        result = json.loads(data)\n    except:\n        return {}\n    return result",
-      "expected_output": "bare except clause",
+      "prompt": "Review this Go code for a fund transfer function:\n\n```go\nfunc Transfer(ctx context.Context, db *sql.DB, from, to string, amount int64) error {\n\tvar balance int64\n\terr := db.QueryRowContext(ctx, \"SELECT balance FROM accounts WHERE id = $1\", from).Scan(&balance)\n\tif err != nil { return fmt.Errorf(\"read sender balance: %w\", err) }\n\tif balance < amount { return fmt.Errorf(\"insufficient funds\") }\n\t_, err = db.ExecContext(ctx, \"UPDATE accounts SET balance = balance - $1 WHERE id = $2\", amount, from)\n\tif err != nil { return fmt.Errorf(\"deduct from sender: %w\", err) }\n\t_, err = db.ExecContext(ctx, \"UPDATE accounts SET balance = balance + $1 WHERE id = $2\", amount, to)\n\tif err != nil { return fmt.Errorf(\"credit receiver: %w\", err) }\n\treturn nil\n}\n```",
+      "expected_output": "Should find: (1) race condition — read-modify-write without transaction, concurrent transfers can overdraw, (2) data loss — if credit fails after debit, funds are lost, (3) no transaction wrapping the three operations. Should rate both as Blocker.",
+      "files": ["evals/files/race-condition.go"],
       "assertions": [
         {
-          "text": "identifies bare except as an issue",
-          "keywords": ["except"]
+          "text": "identifies race condition or TOCTOU on balance check",
+          "keywords": ["race", "concurrent", "TOCTOU", "time-of-check", "atomicity", "atomic"]
         },
         {
-          "text": "identifies silent failure pattern",
-          "keywords": ["silent", "swallow", "empty", "error"]
+          "text": "identifies data loss risk if second update fails after first succeeds",
+          "keywords": ["transaction", "partial", "data loss", "inconsistent", "rollback"]
+        },
+        {
+          "text": "rates at least one finding as Blocker severity",
+          "keywords": ["Blocker", "blocker", "BLOCKER", "Critical", "critical"]
+        },
+        {
+          "text": "recommends using a database transaction",
+          "keywords": ["transaction", "tx", "BEGIN", "COMMIT", "db.BeginTx"]
         }
       ]
     },
     {
       "id": 2,
-      "prompt": "Review this Go code:\n\nfunc Process(item Item) <-chan Result {\n    ch := make(chan Result, 1)\n    go func() { ch <- doWork(item); close(ch) }()\n    return ch\n}",
-      "expected_output": "channel wrapping synchronous work",
+      "prompt": "Review this Python retry utility. It's clean, well-tested code in an internal library.\n\n```python\ndef with_retry(fn, *, max_attempts=3, base_delay=1.0, max_delay=30.0):\n    last_exc = None\n    for attempt in range(max_attempts):\n        try:\n            return fn()\n        except httpx.HTTPStatusError as exc:\n            if exc.response.status_code not in _TRANSIENT_STATUS_CODES:\n                raise\n            last_exc = exc\n            if attempt < max_attempts - 1:\n                delay = min(base_delay * (2**attempt), max_delay)\n                logger.warning(\"Transient %d on attempt %d/%d, retrying in %.1fs\", exc.response.status_code, attempt + 1, max_attempts, delay)\n                time.sleep(delay)\n    raise last_exc\n```",
+      "expected_output": "Should find zero Blocker or Major issues. This is clean, correct code. May note minor suggestions at most. Should NOT hallucinate security vulnerabilities or missing error handling.",
+      "files": ["evals/files/clean-correct-code.py"],
       "assertions": [
         {
-          "text": "identifies unnecessary channel/goroutine wrapper",
-          "keywords": ["channel", "goroutine", "synchronous", "unnecessary"]
+          "text": "does not flag any Blocker issues",
+          "keywords": ["!Blocker", "!BLOCKER", "!Critical"]
+        },
+        {
+          "text": "does not hallucinate security vulnerabilities",
+          "keywords": ["!injection", "!vulnerability", "!exploit"]
+        },
+        {
+          "text": "overall score is 7 or higher on average",
+          "keywords": ["7", "8", "9", "10"]
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "Review this JavaScript notification service:\n\n```javascript\nexport async function sendNotification(userId, message, channel) {\n  const response = await fetch(PROVIDER_URL + '/api/v1/send', {\n    method: 'POST',\n    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${process.env.NOTIFICATION_API_KEY}` },\n    body: JSON.stringify({ recipient: userId, body: message, channel: channel || 'email', timestamp: new Date().toISOString() }),\n  });\n  const result = await response.json();\n  return result;\n}\n\nexport async function sendBulkNotifications(userIds, message) {\n  const results = [];\n  for (const userId of userIds) {\n    const result = await sendNotification(userId, message);\n    results.push(result);\n  }\n  return results;\n}\n```",
+      "expected_output": "Should find: (1) no timeout on fetch — if provider is slow, caller hangs indefinitely, (2) no error handling on response status, (3) sequential sends in bulk — should use Promise.all or Promise.allSettled, (4) no retry on transient failures.",
+      "files": ["evals/files/degraded-dependency.js"],
+      "assertions": [
+        {
+          "text": "identifies missing timeout on external HTTP call",
+          "keywords": ["timeout", "hang", "indefinite", "AbortController", "signal"]
+        },
+        {
+          "text": "identifies missing error handling on response",
+          "keywords": ["response.ok", "status", "error handling", "check"]
+        },
+        {
+          "text": "identifies sequential sends should be parallel",
+          "keywords": ["Promise.all", "Promise.allSettled", "parallel", "sequential", "concurrent"]
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "prompt": "Review this Java batch order processor:\n\n```java\npublic void processBatch(List<Order> orders) throws SQLException {\n    for (Order order : orders) {\n        // Reserve inventory\n        stmt.executeUpdate(); // UPDATE inventory SET reserved = reserved + ?\n        // Charge payment via external API\n        paymentClient.charge(order.customerId(), order.totalCents());\n        // Mark fulfilled\n        stmt.executeUpdate(); // UPDATE orders SET status = 'fulfilled'\n    }\n}\n```",
+      "expected_output": "Should find: (1) no transaction — if payment fails after inventory reserved, inventory is stuck, (2) no rollback for partial batch failures — order N fails but orders 1..N-1 are committed, (3) external API call inside loop with no error handling.",
+      "files": ["evals/files/partial-failure.java"],
+      "assertions": [
+        {
+          "text": "identifies missing transaction or rollback mechanism",
+          "keywords": ["transaction", "rollback", "atomic", "partial"]
+        },
+        {
+          "text": "identifies that payment failure leaves inventory in bad state",
+          "keywords": ["payment", "inventory", "inconsistent", "reserved", "stuck"]
+        },
+        {
+          "text": "rates data integrity issue as Blocker",
+          "keywords": ["Blocker", "blocker", "Critical", "critical", "data loss", "data integrity"]
+        }
+      ]
+    },
+    {
+      "id": 5,
+      "prompt": "Review this Go code that queries users by role. The 'role' column was added in migration 042 and the 'status' column may or may not exist depending on whether migration 045 has run.\n\n```go\nfunc GetActiveAdmins(ctx context.Context, db *sql.DB) ([]User, error) {\n\trows, err := db.QueryContext(ctx,\n\t\t\"SELECT id, email, name, role FROM users WHERE role = 'admin' AND status = 'active'\")\n\t// ...\n}\n```",
+      "expected_output": "Should find: (1) schema drift risk — query uses 'status' column that may not exist if migration 045 hasn't run, (2) hard-coded role string 'admin' should be a constant, (3) version skew risk during rolling deploy if migration ordering matters.",
+      "files": ["evals/files/schema-drift.go"],
+      "assertions": [
+        {
+          "text": "identifies schema drift risk with status column",
+          "keywords": ["schema", "migration", "status", "column", "drift"]
+        },
+        {
+          "text": "identifies deployment ordering dependency",
+          "keywords": ["deploy", "migration", "order", "version", "skew"]
+        }
+      ]
+    },
+    {
+      "id": 6,
+      "prompt": "Review this JavaScript package validation change. The PR description says 'adds binary file pattern matching support'. Previously, packages without config would FAIL validation.\n\n```javascript\nexport function validatePackage(source, config) {\n  const patterns = config?.allow?.binaryFiles;\n  if (!patterns?.length) {\n    return { passed: true, source, detail: { reason: 'no restrictions configured' } };\n  }\n  // ... pattern matching logic ...\n}\n```",
+      "expected_output": "Should find: silent behavioral change — the function now returns passed:true when no config exists, but previously this would fail. This is a security regression where packages with binary files will now pass unchecked.",
+      "files": ["evals/files/silent-behavioral-change.js"],
+      "assertions": [
+        {
+          "text": "identifies the silent behavioral change from fail to pass",
+          "keywords": ["silent", "behavioral", "default", "change", "regression", "previously"]
+        },
+        {
+          "text": "identifies this as a security concern",
+          "keywords": ["security", "bypass", "unchecked", "regression", "Blocker", "blocker"]
+        }
+      ]
+    },
+    {
+      "id": 7,
+      "prompt": "Review this Go webhook handler for a payment provider:\n\n```go\nfunc (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {\n\tvar event Event\n\tif err := json.NewDecoder(r.Body).Decode(&event); err != nil {\n\t\tw.WriteHeader(http.StatusBadRequest)\n\t\treturn\n\t}\n\tif err := h.store.Save(r.Context(), event); err != nil {\n\t\tw.WriteHeader(http.StatusInternalServerError)\n\t\treturn\n\t}\n\tw.WriteHeader(http.StatusOK)\n}\n```\n\nThis handles payment events in production.",
+      "expected_output": "Should find: (1) no logging on any error path — if decode or save fails, nobody will know, (2) no request ID or event ID in error responses for debugging, (3) no metrics on success/failure rates, (4) payment webhook is critical path — these observability gaps are Major or Blocker.",
+      "files": ["evals/files/observability-gap.go"],
+      "assertions": [
+        {
+          "text": "identifies missing logging on error paths",
+          "keywords": ["log", "logging", "observability", "silent", "error"]
+        },
+        {
+          "text": "identifies this is a critical path needing better visibility",
+          "keywords": ["payment", "critical", "production", "monitoring", "visibility", "metrics"]
+        },
+        {
+          "text": "rates observability gap as at least Major for production payment handler",
+          "keywords": ["Major", "major", "Blocker", "blocker"]
+        }
+      ]
+    },
+    {
+      "id": 8,
+      "prompt": "Review this Python PR. The description says 'Add user search API'. The PR contains the search function plus docstring additions to 3 existing utility functions that were not changed.\n\n```python\ndef search_users(db, query, limit=50):\n    sql = f\"SELECT id, username, email, display_name FROM users WHERE username LIKE '%{query}%' OR email LIKE '%{query}%' LIMIT {limit}\"\n    cursor = db.execute(sql)\n    return [UserSearchResult(*row) for row in cursor.fetchall()]\n```\n\nThe PR also adds verbose docstrings to get_db_path(), format_username(), and validate_email() — none of which were modified.",
+      "expected_output": "Should find: (1) SQL injection — f-string interpolation into SQL query is a Blocker, (2) AI-spray — docstrings added to 3 unrelated functions, (3) PR scope assessment should flag as mixed or AI-spray.",
+      "files": ["evals/files/sql-injection-with-spray.py"],
+      "assertions": [
+        {
+          "text": "identifies SQL injection vulnerability",
+          "keywords": ["SQL injection", "injection", "f-string", "parameterized", "placeholder"]
+        },
+        {
+          "text": "rates SQL injection as Blocker",
+          "keywords": ["Blocker", "blocker", "Critical", "critical"]
+        },
+        {
+          "text": "identifies AI-spray in the unrelated docstring additions",
+          "keywords": ["AI-spray", "spray", "unrelated", "docstring", "scope"]
+        },
+        {
+          "text": "PR scope assessment flags this as mixed or AI-spray",
+          "keywords": ["mixed", "AI-spray", "spray", "split", "unrelated"]
+        }
+      ]
+    },
+    {
+      "id": 9,
+      "prompt": "Review this Python config loader:\n\n```python\ndef load_config(path: str) -> dict:\n    try:\n        data = Path(path).read_text()\n        return json.loads(data)\n    except:\n        return {\"debug\": False, \"log_level\": \"INFO\"}\n```",
+      "expected_output": "Should find: (1) bare except clause catches everything including KeyboardInterrupt and SystemExit — TYPED checklist Blocker, (2) silent failure returns default config hiding real errors like permission denied or malformed JSON.",
+      "files": ["evals/files/bare-except-python.py"],
+      "assertions": [
+        {
+          "text": "identifies bare except clause as a problem",
+          "keywords": ["bare except", "except:", "catch all", "KeyboardInterrupt", "SystemExit", "broad"]
+        },
+        {
+          "text": "identifies silent failure masking real errors",
+          "keywords": ["silent", "swallow", "mask", "hide", "suppress"]
+        },
+        {
+          "text": "applies Python TYPED checklist or references exception chaining",
+          "keywords": ["TYPED", "exception", "from", "chain", "specific"]
+        }
+      ]
+    },
+    {
+      "id": 10,
+      "prompt": "Review this Go code that wraps synchronous operations in channels and goroutines:\n\n```go\nfunc NormalizeRecord(record Record) <-chan Result {\n\tch := make(chan Result, 1)\n\tgo func() {\n\t\tnormalized := Record{Name: strings.TrimSpace(record.Name), Email: strings.ToLower(strings.TrimSpace(record.Email)), Tags: dedup(record.Tags)}\n\t\tdata, err := json.Marshal(normalized)\n\t\tif err != nil { ch <- Result{Err: fmt.Errorf(\"marshal record: %w\", err)} } else { ch <- Result{Data: data} }\n\t\tclose(ch)\n\t}()\n\treturn ch\n}\n\nfunc ValidateEmail(email string) <-chan bool {\n\tch := make(chan bool, 1)\n\tgo func() { ch <- strings.Contains(email, \"@\") && strings.Contains(email, \".\"); close(ch) }()\n\treturn ch\n}\n```",
+      "expected_output": "Should find: (1) both functions wrap purely synchronous CPU-bound work in unnecessary goroutines and channels — DRIVEC Blocker, (2) ValidateEmail is a trivial string check that doesn't need any concurrency. Should recommend returning values directly.",
+      "files": ["evals/files/channel-wrapping-sync.go"],
+      "assertions": [
+        {
+          "text": "identifies channel wrapping synchronous work as an anti-pattern",
+          "keywords": ["channel", "synchronous", "goroutine", "unnecessary", "overhead"]
+        },
+        {
+          "text": "recommends returning values directly instead of through channels",
+          "keywords": ["return", "direct", "simple", "remove channel", "remove goroutine"]
+        },
+        {
+          "text": "applies Go DRIVEC checklist or references concurrency anti-pattern",
+          "keywords": ["DRIVEC", "concurrency", "anti-pattern", "Blocker", "blocker"]
+        }
+      ]
+    },
+    {
+      "id": 11,
+      "prompt": "Review this Go rate limiter middleware. Focus on whether all exported functions are actually used.\n\n```go\n// Middleware returns an HTTP middleware that enforces rate limits.\nfunc (rl *RateLimiter) Middleware(next http.Handler) http.Handler { /* ... uses rl.store.Increment ... */ }\n\n// CheckRateLimit verifies a key hasn't exceeded its limit.\nfunc (rl *RateLimiter) CheckRateLimit(ctx context.Context, key string) (bool, error) { /* ... also uses rl.store.Increment ... */ }\n\n// ResetLimit clears the rate limit counter for a key.\nfunc (rl *RateLimiter) ResetLimit(ctx context.Context, key string) error {\n\t// TODO: implement when store supports delete\n\treturn nil\n}\n\n// FormatLimitHeader builds the X-RateLimit-Remaining header value.\nfunc FormatLimitHeader(remaining, total int) string { /* string formatting */ }\n```\n\nThe PR introduces this as a new package. The only consumer is a single HTTP handler that calls `rl.Middleware(next)`.",
+      "expected_output": "Should find: (1) CheckRateLimit duplicates Middleware's logic but is never called — dead code, (2) ResetLimit is a no-op TODO — dead code, (3) FormatLimitHeader is a standalone function not called anywhere — dead code. Should also flag the buggy itoa helper.",
+      "files": ["evals/files/dead-code.go"],
+      "assertions": [
+        {
+          "text": "identifies CheckRateLimit as dead code (duplicates Middleware, no callers)",
+          "keywords": ["CheckRateLimit", "dead code", "unused", "never called", "duplicate"]
+        },
+        {
+          "text": "identifies ResetLimit as unimplemented dead code",
+          "keywords": ["ResetLimit", "TODO", "dead code", "unimplemented", "no-op"]
+        },
+        {
+          "text": "identifies FormatLimitHeader as unused",
+          "keywords": ["FormatLimitHeader", "dead code", "unused", "never called"]
+        }
+      ]
+    },
+    {
+      "id": 12,
+      "prompt": "Review this JavaScript notification module. Three functions format notifications for different channels.\n\n```javascript\nexport function formatEmailNotification(user, event) {\n  const timestamp = new Date(event.timestamp).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' });\n  const greeting = user.preferredName ? `Hi ${user.preferredName}` : `Hi ${user.firstName}`;\n  return { subject: `[${event.type.toUpperCase()}] ${event.summary}`, body: `${greeting},...`, recipient: user.email };\n}\n\nexport function formatSlackNotification(user, event) {\n  const timestamp = new Date(event.timestamp).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' });\n  const greeting = user.preferredName ? `Hi ${user.preferredName}` : `Hi ${user.firstName}`;\n  return { channel: user.slackId, text: `${greeting}, ...` };\n}\n\nexport function formatSMSNotification(user, event) {\n  const timestamp = new Date(event.timestamp).toLocaleDateString('en-US', { /* same options */ });\n  const name = user.preferredName || user.firstName;\n  return { to: user.phoneNumber, body: `${name}: ...` };\n}\n```",
+      "expected_output": "Should find: (1) timestamp formatting duplicated identically in all 3 functions — extract to shared helper, (2) greeting/name logic duplicated in all 3 — extract to shared helper, (3) DRY violation — the three functions share 80% of their logic.",
+      "files": ["evals/files/duplicate-code.js"],
+      "assertions": [
+        {
+          "text": "identifies duplicated timestamp formatting across functions",
+          "keywords": ["duplicate", "DRY", "timestamp", "repeated", "extract", "shared"]
+        },
+        {
+          "text": "identifies duplicated greeting/name logic",
+          "keywords": ["greeting", "name", "duplicate", "extract", "shared", "DRY"]
+        },
+        {
+          "text": "recommends extracting shared logic into helper functions",
+          "keywords": ["extract", "helper", "shared", "refactor", "common"]
+        }
+      ]
+    },
+    {
+      "id": 13,
+      "prompt": "Review this Go CLI tool used internally by 3 engineers on the team. It processes files matching a glob pattern.\n\n```go\n// This is an internal CLI tool used by 3 engineers on the team.\nfunc ProcessFiles(pattern string) error {\n\tmatches, err := filepath.Glob(pattern)\n\tif err != nil { return fmt.Errorf(\"glob pattern: %w\", err) }\n\tfor _, path := range matches {\n\t\tdata, err := os.ReadFile(path)\n\t\tif err != nil { fmt.Fprintf(os.Stderr, \"warning: skipping %s: %v\\n\", path, err); continue }\n\t\toutput := transform(data)\n\t\tif err := os.WriteFile(path+\".processed\", output, 0644); err != nil { return fmt.Errorf(\"write %s: %w\", path+\".processed\", err) }\n\t}\n\treturn nil\n}\n```\n\nNote: this is NOT a production service. It's a local CLI utility.",
+      "expected_output": "Should give a generally positive review. Should NOT flag production-grade concerns like missing metrics, circuit breakers, or comprehensive error handling. May note minor things (0644 permissions, path traversal if pattern comes from user input) but should calibrate severity to internal CLI context. Should NOT rate any issue as Blocker.",
+      "files": ["evals/files/context-calibration-cli.go"],
+      "assertions": [
+        {
+          "text": "does not apply production-grade severity to internal CLI tool",
+          "keywords": ["!Blocker", "!Critical", "!production"]
+        },
+        {
+          "text": "acknowledges the internal/CLI context in its assessment",
+          "keywords": ["internal", "CLI", "tool", "engineer", "local"]
+        },
+        {
+          "text": "overall tone is positive or neutral, not alarmist",
+          "keywords": ["acceptable", "reasonable", "appropriate", "fine", "minor"]
+        }
+      ]
+    },
+    {
+      "id": 14,
+      "prompt": "Review this Go service layer. Apply the DRIVEC checklist.\n\n```go\ntype UserRepository interface {\n\tFindByID(id string) (*User, error)\n\tFindByEmail(email string) (*User, error)\n\tSave(user *User) error\n\tDelete(id string) error\n\tList() ([]*User, error)\n\tCount() (int, error)\n\tFindActive() ([]*User, error)\n\tFindInactive() ([]*User, error)\n\tFindByRole(role string) ([]*User, error)\n\tFindByDepartment(dept string) ([]*User, error)\n\tSearch(query string) ([]*User, error)\n\tUpdateEmail(id, email string) error\n\tUpdateRole(id, role string) error\n\tDeactivate(id string) error\n}\n\nfunc (s *UserService) GetUser(id string) (*User, error) {\n\tuser, err := s.repo.FindByID(id)\n\tif err != nil { return nil, fmt.Errorf(\"failed to get user: %s\", err) }\n\treturn user, nil\n}\n\nfunc (s *UserService) UpdateUserEmail(id string, email string) error {\n\t_, err := s.repo.FindByID(id)\n\tif err != nil { log.Printf(\"failed to find user: %s\", err); return errors.New(\"user not found\") }\n\terr = s.repo.UpdateEmail(id, email)\n\tif err != nil { log.Printf(\"failed to update email: %s\", err); return errors.New(\"update failed\") }\n\treturn nil\n}\n\nfunc (s UserService) DeleteUser(id string) error { /* value receiver */ }\n```",
+      "expected_output": "Should find: (1) interface too large — 14 methods violates DRIVEC 1-3 method max, (2) error wrapping uses %s instead of %w — DRIVEC Blocker, (3) 'failed to' prefix violates DRIVEC error conventions, (4) mixed receivers — DeleteUser uses value receiver while others use pointer, (5) errors.New loses context — wraps error string without chain, (6) log.Printf in service layer instead of returning error to caller.",
+      "files": ["evals/files/idiomatic-violations.go"],
+      "assertions": [
+        {
+          "text": "identifies interface is too large (14 methods)",
+          "keywords": ["interface", "large", "methods", "split", "too many", "14"]
+        },
+        {
+          "text": "identifies error wrapping with %s instead of %w",
+          "keywords": ["%w", "%s", "wrap", "error", "Errorf"]
+        },
+        {
+          "text": "identifies mixed receiver types (value vs pointer)",
+          "keywords": ["receiver", "value", "pointer", "consistent", "DeleteUser"]
+        },
+        {
+          "text": "applies DRIVEC checklist explicitly",
+          "keywords": ["DRIVEC", "checklist", "Go"]
+        }
+      ]
+    },
+    {
+      "id": 15,
+      "prompt": "Review this Java configuration loader. Apply the INVEST checklist.\n\n```java\npublic class ConfigService {\n    private Properties props;\n\n    public ConfigService(String path) {\n        this.props = new Properties();\n        try {\n            FileInputStream fis = new FileInputStream(path);\n            props.load(fis);\n        } catch (Exception e) {\n            // use defaults\n        }\n    }\n\n    public String getDbUrl() {\n        String url = props.getProperty(\"db.url\");\n        if (url == null) { return null; }\n        return url;\n    }\n\n    public boolean isFeatureEnabled(String feature) {\n        String value = props.getProperty(\"feature.\" + feature);\n        if (value == \"true\") { return true; }\n        return false;\n    }\n\n    public int getMaxRetries() {\n        try { return Integer.parseInt(props.getProperty(\"max.retries\")); }\n        catch (NumberFormatException e) { throw new RuntimeException(e.getMessage()); }\n    }\n\n    public void printConfig() {\n        System.out.println(\"Config loaded: \" + props.size() + \" properties\");\n    }\n}\n```",
+      "expected_output": "Should find: (1) empty catch block swallows all exceptions including IOException — INVEST Blocker, (2) string comparison with == instead of .equals() — INVEST Blocker, (3) FileInputStream not closed (no try-with-resources) — resource leak, (4) RuntimeException loses cause chain (uses getMessage() not the exception itself), (5) System.out.println instead of logger, (6) getDbUrl returns null instead of Optional.",
+      "files": ["evals/files/java-invest-violations.java"],
+      "assertions": [
+        {
+          "text": "identifies empty catch block as a serious issue",
+          "keywords": ["catch", "empty", "swallow", "silent", "Exception"]
+        },
+        {
+          "text": "identifies string comparison with == instead of .equals()",
+          "keywords": ["==", ".equals", "string comparison", "reference", "identity"]
+        },
+        {
+          "text": "identifies missing try-with-resources for FileInputStream",
+          "keywords": ["try-with-resources", "close", "resource leak", "FileInputStream", "AutoCloseable"]
+        },
+        {
+          "text": "identifies exception chain breakage in getMaxRetries",
+          "keywords": ["cause", "chain", "getMessage", "RuntimeException", "wrap"]
+        }
+      ]
+    },
+    {
+      "id": 16,
+      "prompt": "Review this Bash deploy script. Apply the VEST checklist.\n\n```bash\n#!/bin/bash\nDEPLOY_DIR=/opt/app/staging\nBACKUP_DIR=/opt/app/backups\n\ndeploy() {\n    timestamp=`date +%Y%m%d_%H%M%S`\n    cp -r $DEPLOY_DIR $BACKUP_DIR/backup_$timestamp\n    cd $DEPLOY_DIR\n    git pull origin main\n    for file in $(ls requirements/*.txt); do\n        pip install -r $file\n    done\n    python manage.py migrate\n    if [ $? = 0 ]; then\n        systemctl restart app-staging\n    else\n        cp -r $BACKUP_DIR/backup_$timestamp/* $DEPLOY_DIR/\n    fi\n}\n```",
+      "expected_output": "Should find: (1) missing set -Eeuo pipefail — VEST Blocker, (2) unquoted variable expansions ($DEPLOY_DIR etc) — VEST Blocker, (3) backtick command substitution instead of $() — VEST Major, (4) for loop parses ls output — VEST Blocker, (5) cd without || exit — VEST Major, (6) no trap for cleanup, (7) function variables not local.",
+      "files": ["evals/files/bash-vest-violations.sh"],
+      "assertions": [
+        {
+          "text": "identifies missing set -Eeuo pipefail or strict mode",
+          "keywords": ["set -e", "pipefail", "strict mode", "errexit"]
+        },
+        {
+          "text": "identifies unquoted variable expansions",
+          "keywords": ["unquoted", "quote", "$DEPLOY_DIR", "word splitting", "glob"]
+        },
+        {
+          "text": "identifies parsing ls output in for loop",
+          "keywords": ["ls", "for", "parse", "glob", "word splitting"]
+        },
+        {
+          "text": "identifies cd without error handling",
+          "keywords": ["cd", "exit", "||", "directory", "wrong"]
+        }
+      ]
+    },
+    {
+      "id": 17,
+      "prompt": "Review this Node.js build runner. Apply the STREAMS checklist.\n\n```javascript\nconst { exec } = require('child_process');\nconst fs = require('fs');\nconst path = require('path');\n\nasync function buildPackage(packageName, outputDir) {\n  if (fs.existsSync(outputDir)) {\n    const stats = fs.statSync(outputDir);\n    if (!stats.isDirectory()) throw new Error('Output path is not a directory');\n  } else {\n    fs.mkdirSync(outputDir, { recursive: true });\n  }\n  const buildCmd = `npm pack ${packageName} --pack-destination ${outputDir}`;\n  return new Promise((resolve, reject) => {\n    exec(buildCmd, (error, stdout) => {\n      if (error) { reject(error); return; }\n      resolve(stdout.trim());\n    });\n  });\n}\n```\n\nNote: packageName comes from user input.",
+      "expected_output": "Should find: (1) command injection via exec() with string interpolation of user input — STREAMS Blocker, should use execFile, (2) TOCTOU: existsSync then statSync is a race — STREAMS Major, (3) require() instead of node: protocol — STREAMS minor, (4) CommonJS instead of ESM.",
+      "files": ["evals/files/node-streams-violations.js"],
+      "assertions": [
+        {
+          "text": "identifies command injection via exec with user input",
+          "keywords": ["exec", "injection", "command injection", "execFile", "user input"]
+        },
+        {
+          "text": "rates command injection as Blocker",
+          "keywords": ["Blocker", "blocker", "Critical", "critical", "security"]
+        },
+        {
+          "text": "identifies TOCTOU with existsSync then statSync",
+          "keywords": ["TOCTOU", "existsSync", "race", "time-of-check"]
+        }
+      ]
+    },
+    {
+      "id": 18,
+      "prompt": "Review this Terraform configuration. Apply the STATELOCK checklist.\n\n```hcl\nprovider \"aws\" {\n  region     = \"us-west-2\"\n  access_key = \"AKIAIOSFODNN7EXAMPLE\"\n  secret_key = \"wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY\"\n}\n\nresource \"aws_instance\" \"app\" {\n  count         = length(var.subnet_ids)\n  ami           = \"ami-0c55b159cbfafe1f0\"\n  instance_type = \"t3.medium\"\n  subnet_id     = var.subnet_ids[count.index]\n}\n\nresource \"aws_db_instance\" \"production\" {\n  identifier     = \"prod-database\"\n  password       = \"SuperSecret123!\"\n  skip_final_snapshot = true\n}\n```",
+      "expected_output": "Should find: (1) hardcoded AWS credentials in provider — STATELOCK Blocker, (2) hardcoded password in DB resource — STATELOCK Blocker, (3) count with list index loses key association — STATELOCK Major, should use for_each, (4) hardcoded AMI ID — STATELOCK Major, (5) production DB has no lifecycle prevent_destroy — STATELOCK Major, (6) skip_final_snapshot on production DB.",
+      "files": ["evals/files/terraform-violations.tf"],
+      "assertions": [
+        {
+          "text": "identifies hardcoded credentials in provider block",
+          "keywords": ["credential", "hardcoded", "access_key", "secret_key", "secret"]
+        },
+        {
+          "text": "rates hardcoded credentials as Blocker",
+          "keywords": ["Blocker", "blocker", "Critical", "critical"]
+        },
+        {
+          "text": "identifies count with list index should use for_each",
+          "keywords": ["count", "for_each", "index", "list"]
+        },
+        {
+          "text": "identifies missing lifecycle protection on production database",
+          "keywords": ["lifecycle", "prevent_destroy", "production", "protection", "skip_final_snapshot"]
+        }
+      ]
+    },
+    {
+      "id": 19,
+      "prompt": "Review this Go HTTP handler for listing items. It's a well-written handler in a production service.\n\n```go\nfunc (h *ListHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {\n\tif r.Method != http.MethodGet {\n\t\thttp.Error(w, \"method not allowed\", http.StatusMethodNotAllowed)\n\t\treturn\n\t}\n\tcursor := r.URL.Query().Get(\"cursor\")\n\tlimit := 20\n\titems, nextCursor, err := h.store.List(r.Context(), cursor, limit)\n\tif err != nil {\n\t\th.log.ErrorContext(r.Context(), \"list items failed\", \"error\", err, \"cursor\", cursor)\n\t\tif errors.Is(err, context.Canceled) { return }\n\t\thttp.Error(w, \"internal error\", http.StatusInternalServerError)\n\t\treturn\n\t}\n\tw.Header().Set(\"Content-Type\", \"application/json\")\n\tjson.NewEncoder(w).Encode(map[string]any{\"items\": items, \"next_cursor\": nextCursor})\n}\n```\n\nStore interface has 1 method. Handler uses slog structured logging. Context is propagated correctly.",
+      "expected_output": "Should give a positive review. No blockers. Maybe minor suggestions (hardcoded limit, cursor validation). Should NOT invent security issues or flag this as problematic. Score should be 7+ average.",
+      "files": ["evals/files/clean-go-handler.go"],
+      "assertions": [
+        {
+          "text": "does not flag any Blocker issues",
+          "keywords": ["!Blocker", "!BLOCKER", "!Critical"]
+        },
+        {
+          "text": "does not hallucinate security vulnerabilities",
+          "keywords": ["!injection", "!vulnerability", "!exploit", "!XSS"]
+        },
+        {
+          "text": "acknowledges good patterns (context propagation, structured logging, small interface)",
+          "keywords": ["context", "logging", "slog", "interface"]
+        },
+        {
+          "text": "recommendation is Approve or Approve with suggestions",
+          "keywords": ["Approve", "approve", "merge"]
+        }
+      ]
+    },
+    {
+      "id": 20,
+      "prompt": "Review this Java record for a build report. It's used in an internal build system.\n\n```java\npublic record BuildReport(\n        String id, String packageName, String version,\n        Status status, List<String> warnings, Instant completedAt) {\n    public BuildReport {\n        Objects.requireNonNull(id, \"id must not be null\");\n        Objects.requireNonNull(packageName, \"packageName must not be null\");\n        Objects.requireNonNull(version, \"version must not be null\");\n        Objects.requireNonNull(status, \"status must not be null\");\n        warnings = warnings != null ? List.copyOf(warnings) : List.of();\n    }\n    public enum Status { SUCCESS, FAILURE, PARTIAL }\n    public boolean isSuccessful() { return status == Status.SUCCESS; }\n    public Optional<Instant> completionTime() { return Optional.ofNullable(completedAt); }\n    public boolean hasWarnings() { return !warnings.isEmpty(); }\n}\n```",
+      "expected_output": "Should give a positive review. This follows INVEST checklist well: immutable record, null safety via requireNonNull, Optional for nullable return, defensive copy of list. No blockers. Score should be 8+ average.",
+      "files": ["evals/files/clean-java-record.java"],
+      "assertions": [
+        {
+          "text": "does not flag any Blocker or Major issues",
+          "keywords": ["!Blocker", "!BLOCKER", "!Major", "!MAJOR"]
+        },
+        {
+          "text": "recognizes good INVEST patterns (immutability, null safety, Optional)",
+          "keywords": ["immutable", "record", "requireNonNull", "Optional", "defensive"]
+        },
+        {
+          "text": "recommendation is Approve or Approve with suggestions",
+          "keywords": ["Approve", "approve", "merge"]
+        }
+      ]
+    },
+    {
+      "id": 21,
+      "prompt": "Review this Go code for a public-facing avatar API serving ~2M requests/day.\n\n```go\nfunc ServeUserAvatar(w http.ResponseWriter, r *http.Request) {\n\tuserID := r.PathValue(\"id\")\n\tavatarPath := filepath.Join(\"/data/avatars\", userID+\".png\")\n\tdata, err := os.ReadFile(avatarPath)\n\tif err != nil {\n\t\tw.WriteHeader(http.StatusNotFound)\n\t\treturn\n\t}\n\tw.Header().Set(\"Content-Type\", \"image/png\")\n\tw.Write(data)\n}\n\nfunc UploadAvatar(w http.ResponseWriter, r *http.Request) {\n\tuserID := r.PathValue(\"id\")\n\tif r.ContentLength > 5*1024*1024 {\n\t\thttp.Error(w, \"file too large\", http.StatusRequestEntityTooLarge)\n\t\treturn\n\t}\n\toutPath := filepath.Join(\"/data/avatars\", userID+\".png\")\n\tout, err := os.Create(outPath)\n\tif err != nil {\n\t\thttp.Error(w, \"internal error\", http.StatusInternalServerError)\n\t\treturn\n\t}\n\tdefer out.Close()\n\tout.ReadFrom(r.Body)\n\tw.WriteHeader(http.StatusNoContent)\n}\n```\n\nThis is a PUBLIC-FACING production API serving 2M req/day. NOT an internal tool.",
+      "expected_output": "Should find serious issues and rate them as Blocker/Major: (1) path traversal — userID is unsanitized, '../../etc/passwd' works via filepath.Join, (2) no auth — anyone can upload/overwrite any user's avatar, (3) ReadFile loads entire image into memory at 2M req/day — should stream, (4) ContentLength can be spoofed — need io.LimitReader, (5) no logging on errors. These MUST be rated as Blockers for a public-facing production API, not Minor. Compare severity calibration to eval 13 (internal CLI) — this should be much harsher.",
+      "files": ["evals/files/context-calibration-production-api.go"],
+      "assertions": [
+        {
+          "text": "identifies path traversal vulnerability on userID",
+          "keywords": ["path traversal", "traversal", "directory traversal", "../", "sanitize", "unsanitized"]
+        },
+        {
+          "text": "rates path traversal as Blocker for public-facing API",
+          "keywords": ["Blocker", "blocker", "Critical", "critical"]
+        },
+        {
+          "text": "identifies missing authentication or authorization",
+          "keywords": ["auth", "authentication", "authorization", "middleware", "who"]
+        },
+        {
+          "text": "identifies memory concern with ReadFile at scale",
+          "keywords": ["ReadFile", "memory", "stream", "io.Copy", "scale", "2M"]
+        },
+        {
+          "text": "identifies ContentLength spoofing — need LimitReader",
+          "keywords": ["ContentLength", "spoof", "LimitReader", "limit", "bypass"]
+        },
+        {
+          "text": "overall severity is harsh — multiple Blockers for production API",
+          "keywords": ["Request changes", "request changes", "F", "Blocker"]
         }
       ]
     }
