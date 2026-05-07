@@ -452,6 +452,70 @@
           "keywords": ["Request changes", "request changes", "F", "Blocker"]
         }
       ]
+    },
+    {
+      "id": 22,
+      "prompt": "Review PR #847 from my teammate Alice — she submitted this Python change to our payment retry handler. The diff:\n\n```python\n# File: payments/retry.py (lines shown with diff line numbers)\n# L42-58 (changed)\ndef retry_charge(customer_id: str, amount_cents: int, attempts: int = 3) -> ChargeResult:\n    last_exc = None\n    for attempt in range(attempts):\n        try:\n            return stripe.Charge.create(customer=customer_id, amount=amount_cents)\n        except stripe.error.APIConnectionError as exc:\n            last_exc = exc\n            time.sleep(2 ** attempt)\n        except stripe.error.CardError:\n            raise\n    raise last_exc\n```\n\nThis is going to production payments. Please give me feedback I can post to her PR.",
+      "expected_output": "Other-PR mode. Should produce BOTH a scorecard AND a GitHub-postable comment block. Comment block must start with `ACTION:`, contain `## Overall`, `## File Comments`, `### \\`payments/retry.py\\``, and at least one `**L<n>**` or `**L<start>-<end>**` inline marker. Findings should include: idempotency risk on retry (Stripe needs idempotency_key for safe retry — without it a retry can double-charge), and arguably the broad APIConnectionError catch ignoring other transient stripe errors. Comment prose should NOT contain VERMILLION markers (\"Furthermore,\", \"Moreover,\", \"It is important to note\", em-dash chains).",
+      "files": [],
+      "assertions": [
+        {
+          "text": "emits scorecard section",
+          "keywords": ["Code Review Scorecard", "Dimension", "Recommendation"]
+        },
+        {
+          "text": "emits GitHub-postable comment block with ACTION line",
+          "keywords": ["ACTION:", "ACTION: comment", "ACTION: request-changes", "ACTION: approve"]
+        },
+        {
+          "text": "comment block has Overall section",
+          "keywords": ["## Overall"]
+        },
+        {
+          "text": "comment block has File Comments section with file path header",
+          "keywords": ["## File Comments", "payments/retry.py"]
+        },
+        {
+          "text": "uses inline line markers for inline comments",
+          "keywords": ["**L42", "**L43", "**L44", "**L45", "**L46", "**L47", "**L48", "**L4"]
+        },
+        {
+          "text": "identifies idempotency risk on payment retry",
+          "keywords": ["idempotency", "idempotency_key", "double charge", "double-charge", "duplicate", "Idempotency-Key"]
+        },
+        {
+          "text": "comment prose avoids VERMILLION transition markers",
+          "keywords": ["!Furthermore,", "!Moreover,", "!It is important to note", "!In conclusion,"]
+        }
+      ]
+    },
+    {
+      "id": 23,
+      "prompt": "Review my staged changes — I just wrote this Python helper before opening a PR. Want a sanity check, no need for anything I'd post anywhere else.\n\n```python\ndef chunk_iterable(items, size):\n    if size <= 0:\n        raise ValueError(\"size must be positive\")\n    chunk = []\n    for item in items:\n        chunk.append(item)\n        if len(chunk) == size:\n            yield chunk\n            chunk = []\n    if chunk:\n        yield chunk\n```",
+      "expected_output": "Own-code mode. Should produce ONLY a scorecard. Should NOT produce a GitHub-postable comment block (no ACTION: line, no `## File Comments` section, no `**L<n>**` inline markers). Code is correct — small helper, clean, no obvious issues. Should rate it well and not invent problems.",
+      "files": [],
+      "assertions": [
+        {
+          "text": "emits scorecard",
+          "keywords": ["Code Review Scorecard", "Dimension", "Recommendation"]
+        },
+        {
+          "text": "does not emit ACTION line for own-code review",
+          "keywords": ["!ACTION: approve", "!ACTION: comment", "!ACTION: request-changes"]
+        },
+        {
+          "text": "does not emit GitHub-postable File Comments section",
+          "keywords": ["!## File Comments"]
+        },
+        {
+          "text": "does not hallucinate issues in clean code",
+          "keywords": ["!Blocker", "!BLOCKER", "!Critical", "!vulnerability"]
+        },
+        {
+          "text": "rates the helper favorably",
+          "keywords": ["Approve", "approve", "merge", "good", "clean", "correct"]
+        }
+      ]
     }
   ]
 }

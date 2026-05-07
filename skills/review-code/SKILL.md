@@ -131,7 +131,20 @@ Scoring: 1-3 blocks merge, 4-5 needs work, 6-7 acceptable, 8-9 good, 10 exceptio
 - **Minor**: Style, refactoring opportunities — CONSIDER
 - **Discussion**: Architecture decisions, alternatives
 
+## Mode Detection
+
+Pick the mode before producing output — they're shaped for different audiences.
+
+- **Other-PR mode**: someone else's PR. Detect when invoked with a PR URL or PR# whose `author.login` (from `gh pr view <pr> --json author`) differs from the local git user (`git config user.email` / `gh api user --jq .login`). Output is shaped for posting back to the author: scorecard + GitHub-postable comment block, both saved to disk, comment block humanized.
+- **Own-code mode**: your own staged changes, a file, a directory, or your own PR. Output is the scorecard alone — no comment block, no disk save, no humanize pass. You're reading it yourself.
+
+Default when args are ambiguous: if `gh pr view` returns nothing for the current branch, treat as own-code review of staged/uncommitted changes.
+
+When `gh` isn't available (offline, sandbox, no network), fall back to linguistic cues from the prompt itself: third-person framing ("their PR", "Alice's change", "my teammate submitted"), an explicit author name that isn't yours, or any phrasing where the user is clearly the reviewer rather than the author → other-PR mode. Pasted code with no PR context, "I wrote this", "before I open a PR", "my staged changes" → own-code mode.
+
 ## Output Format
+
+### Scorecard (both modes)
 
 ```markdown
 ## Code Review Scorecard
@@ -158,6 +171,67 @@ Scoring: 1-3 blocks merge, 4-5 needs work, 6-7 acceptable, 8-9 good, 10 exceptio
 ## Recommendation
 [ ] Approve | [ ] Approve with suggestions | [ ] Request changes | [ ] Request split
 ```
+
+### GitHub-Postable Comment (other-PR mode only)
+
+After the scorecard, emit a second block shaped for pasting into a GitHub PR review. The line numbers must come from the diff so each `**L<n>**` chunk can be filed as an inline comment without further translation. This block is what the PR author sees — write it for them.
+
+```markdown
+ACTION: <approve|comment|request-changes>
+
+## Overall
+
+[2-4 sentences. Lead with what's blocking or what's good, not preamble. The single most important thing the author needs to know if they read nothing else.]
+
+## File Comments
+
+### `path/to/file.ext`
+
+**L<line>** or **L<start>-<end>**
+\`\`\`<lang>
+[1-10 line excerpt — the chunk being commented on]
+\`\`\`
+[Comment: what's wrong, why it matters, suggested fix. Be specific about line numbers and behavior, not vague concerns.]
+
+**L<line>**
+\`\`\`<lang>
+[next chunk]
+\`\`\`
+[next comment]
+
+### `path/to/another-file.ext`
+
+**L<line>**
+[...]
+```
+
+ACTION mapping from the scorecard recommendation:
+- Approve → `approve`
+- Approve with suggestions → `comment`
+- Request changes / Request split → `request-changes`
+
+Omit `### \`path\`` subsections for files with no inline comments worth making. If no file has inline comments, omit the entire `## File Comments` section and let Overall carry the review.
+
+### Humanize Pass (other-PR mode only)
+
+Before saving or emitting the comment block, run its prose through the `humanize` skill — specifically:
+- The full `## Overall` section
+- The narrative text after each code excerpt under `## File Comments`
+
+Leave structural elements alone: the `ACTION:` line, `### \`path\`` headers, `**L<n>**` markers, and code excerpts. Those need to stay machine-parseable.
+
+Why this matters: the comment lands in another engineer's PR with your name on it. AI markers — rigid transitions ("Furthermore,", "Moreover,"), em-dash overuse, hedging ("might want to consider"), uniform sentence length — make code review feedback feel generic and harder to act on. Humanize strips those. Run it on the scorecard's prose only if explicitly asked; the scorecard is for the reviewer's own use, where calibration matters more than tone.
+
+### Persistence (other-PR mode only)
+
+After humanizing, save both artifacts so the review survives the session and can be referenced later:
+
+- `~/.claude/code-reviews/<owner>-<repo>/<YYYY-MM-DD>/<pr#>-<slug>/review.md` — full scorecard
+- `~/.claude/code-reviews/<owner>-<repo>/<YYYY-MM-DD>/<pr#>-<slug>/comment.md` — humanized GitHub-postable comment
+
+Slug: derived from the PR title — lowercased, hyphenated, conventional-commit prefix dropped (`feat(auth):` → `auth-`), truncated to ~40 chars. Match `batch-review`'s layout exactly so both skills read the same archive and a single PR can be opened by either workflow without surprise.
+
+Then emit both artifacts inline in the response (not just paths) so the comment block is reviewable before the user pastes it into GitHub.
 
 ## Anti-Patterns to Avoid in Reviews
 
