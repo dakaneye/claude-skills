@@ -137,4 +137,4 @@ fn transfer(amount: Amount, from: AccountId, to: AccountId) { /* type-safe */ }
 ```
 
 ## Deep Dives
-See `~/.claude/skills/dakaneye-review-code/rust-*.md` for focused files on ownership, errors, traits, unsafe, concurrency, async, testing, iterators, and AI anti-patterns.
+See `~/.claude/skills/review-code/concepts/language-standards/rust/rust-*.md` for focused files on ownership, errors, traits, unsafe, concurrency, async, testing, iterators, and AI anti-patterns.

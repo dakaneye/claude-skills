@@ -118,4 +118,4 @@ resource "aws_db_instance" "prod" {
 ```
 
 ## Deep Dives
-See `~/.claude/skills/dakaneye-review-code/` (terraform-*.md, state.md, modules.md, security.md, testing.md, anti-patterns.md files) for state management, module design, security, testing, and anti-patterns.
+See `~/.claude/skills/review-code/concepts/language-standards/terraform/` (state.md, modules.md, security.md, testing.md, anti-patterns.md) for state management, module design, security, testing, and anti-patterns.

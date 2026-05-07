@@ -16,9 +16,9 @@ Adversarial code review with language-specific expertise and multi-agent validat
 ## Context Gathering Scripts
 
 ```sh
-~/.claude/skills/dakaneye-review-code/get-pr-context.sh [PR_NUMBER]    # Full PR context
-~/.claude/skills/dakaneye-review-code/get-failing-checks.sh [PR_NUMBER] # CI failure logs
-~/.claude/skills/dakaneye-review-code/gh-issue.sh [ISSUE_NUMBER]        # Issue context
+~/.claude/skills/review-code/scripts/get-pr-context.sh [PR_NUMBER]    # Full PR context
+~/.claude/skills/review-code/scripts/get-failing-checks.sh [PR_NUMBER] # CI failure logs
+~/.claude/skills/review-code/scripts/gh-issue.sh [ISSUE_NUMBER]        # Issue context
 ```
 
 ## Review Philosophy
@@ -167,4 +167,4 @@ Scoring: 1-3 blocks merge, 4-5 needs work, 6-7 acceptable, 8-9 good, 10 exceptio
 - Don't approve PRs that bundle unrelated changes
 - `path.join` normalizes paths — don't flag unnecessarily
 
-See also: `~/.claude/skills/dakaneye-review-code/detection-signals.md`, `~/.claude/skills/dakaneye-review-code/code-review.md`
+See also: `~/.claude/skills/review-code/patterns/detection-signals.md`, `~/.claude/skills/review-code/concepts/code-review.md`

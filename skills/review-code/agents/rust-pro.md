@@ -196,7 +196,7 @@ async fn reconcile(obj: Arc<MyResource>, ctx: Arc<Context>) -> Result<Action, Er
 | Observer | Channels (`mpsc`, `broadcast`) |
 | Repository | Trait + struct impl |
 
-For deep dives: `~/.claude/skills/dakaneye-review-code/rust-*.md`
-For pattern guidance: `~/.claude/skills/dakaneye-review-code/rust-borrows-checklist.md`
+For deep dives: `~/.claude/skills/review-code/concepts/language-standards/rust/rust-*.md`
+For pattern guidance: `~/.claude/skills/review-code/concepts/language-standards/rust/rust-borrows-checklist.md`
 
 When in doubt, trust the compiler. Remember Klabnik: "Rust's type system is your pair programming partner."

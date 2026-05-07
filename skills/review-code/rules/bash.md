@@ -95,4 +95,4 @@ done < file.txt
 ```
 
 ## Deep Dives
-See `~/.claude/skills/dakaneye-review-code/` (bash-*.md files) for focused files on variables, errors, security, conditionals, loops, functions, portability, testing, and AI anti-patterns.
+See `~/.claude/skills/review-code/concepts/language-standards/bash/` (bash-*.md files) for focused files on variables, errors, security, conditionals, loops, functions, portability, testing, and AI anti-patterns.

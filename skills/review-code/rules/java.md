@@ -102,4 +102,4 @@ for (Order o : orders) { Customer c = map.get(o.getCustomerId()); }
 ```
 
 ## Deep Dives
-See `~/.claude/skills/dakaneye-review-code/` (java-*.md files) for focused files on exceptions, optional, immutability, streams, nulls, testing, concurrency, and AI anti-patterns.
+See `~/.claude/skills/review-code/concepts/language-standards/java/` (java-*.md files) for focused files on exceptions, optional, immutability, streams, nulls, testing, concurrency, and AI anti-patterns.
