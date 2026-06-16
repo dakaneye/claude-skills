@@ -7,6 +7,21 @@ description: Comprehensive code review with language-specific expertise. Use PRO
 
 Adversarial code review with language-specific expertise and multi-agent validation.
 
+## Review Procedure (follow in order, every review)
+
+Do not jump to output. Work these steps in sequence — steps 4-8 are the gate that produces trustworthy feedback, and they run in **both** modes:
+
+1. **Gather** context (PR/issue/files); pick the mode (see Mode Detection).
+2. **Dispatch** agents by size (see Agent Dispatch); run the adversarial checklist.
+3. **Score** the 15 dimensions; draft raw feedback.
+4. **Frame** every piece of feedback through the `frame` skill (BLUF — action first, evidence second).
+5. **Humanize** the framed prose through the `humanize` skill (strip AI markers).
+6. **Concise / evergreen / useful** — cut each comment to its shortest useful form; no temporal context; drop any comment that doesn't change the reader's next action.
+7. **Truth-verifier loop** — spawn `truth-verifier` against the code; fix or drop every flagged item; re-run until it finds zero inaccuracies. Count the iterations.
+8. **Emit** — the review output MUST include a `## Gate Evidence` block (see Output Format) proving steps 4-7 ran. A review without it is incomplete; do not present it.
+
+Steps 4-6 are detailed in the Refinement Pass section; step 7 in the Truth Verification Loop section. If you reach step 8 without having done 4-7, stop and do them.
+
 ## Usage
 ```sh
 /review-code [PR-URL|file|directory]   # Review PR, file, or directory
@@ -144,16 +159,20 @@ When `gh` isn't available (offline, sandbox, no network), fall back to linguisti
 
 ## Output Format
 
-### Required Completion Gate (REQUIRED — both modes)
+### Gate Evidence (REQUIRED — both modes, emit first)
 
-You MUST NOT present any review output — scorecard or comment block — until every gate below passes. This is blocking, not advisory. Create a TodoWrite item per gate and do not emit the review while any remains open:
+Every review MUST open with this block, before the scorecard. It is the proof that procedure steps 4-7 ran. If you cannot fill a row honestly, you have not done that step — go do it. A review missing this block, or with a row left as a placeholder, is incomplete; do not present it.
 
-1. **Frame** — every piece of feedback run through the `frame` skill.
-2. **Humanize** — the framed prose run through the `humanize` skill.
-3. **Concise / evergreen / useful** — every comment cut to its shortest useful form, no temporal context, no comment that doesn't change the reader's next action.
-4. **Truth-verified** — `truth-verifier` re-run until it finds zero inaccuracies.
+```markdown
+## Gate Evidence
 
-These run in both modes. The Refinement Pass and Truth Verification Loop sections below define each gate. If you find yourself about to show a review without having run them, stop and run them first.
+- **Frame** (`frame` skill): [what changed — e.g. "led with the data-loss risk; cut 3 praise openers"]
+- **Humanize** (`humanize` skill): [what changed — e.g. "removed 2 'Furthermore,'; broke up 4 uniform sentences"]
+- **Concise/evergreen/useful**: [what changed — e.g. "dropped 1 comment that didn't change next action; removed 'the new code'"]
+- **Truth-verifier**: PASS after N iteration(s) — [what it flagged and how it resolved, or "clean on first pass"]
+```
+
+The Refinement Pass and Truth Verification Loop sections below define each step. Fill each row from what you actually did — invented evidence is a Principle 0 violation and worse than admitting the step was skipped.
 
 ### Scorecard (both modes)
 
