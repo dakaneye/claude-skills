@@ -13,8 +13,8 @@ Adversarial code review with language-specific expertise and multi-agent validat
 
 - [ ] Draft scorecard + raw feedback
 - [ ] Refinement Pass — frame + humanize + tighten every comment
-- [ ] Truth Verification — confirm every claim against the code, until clean
-- [ ] Emit with Gate Evidence
+- [ ] Self-Audit Gate — dispatch a verifier on the DRAFTED REVIEW (not the code); fix flags; re-dispatch until CLEAN
+- [ ] Emit with Gate Evidence (the pasted audit verdict)
 
 Do not mark the review complete while any gate todo is open.
 
@@ -26,7 +26,7 @@ Then work the steps in order. **Everything you produce through step 3 is a draft
 4. **Frame** every comment — BLUF, action first (Refinement Pass).
 5. **Humanize** the framed prose — strip AI markers (Refinement Pass).
 6. **Tighten** — concise, evergreen, useful; drop anything that doesn't change the reader's next action (Refinement Pass).
-7. **Verify** every claim against the code (Truth Verification Loop); fix or drop what's flagged; repeat until clean.
+7. **Self-Audit** — dispatch a verifier on your *drafted review* (Self-Audit Gate); fix/drop every flag; re-dispatch until it returns CLEAN. This is a second run, separate from any verifier you dispatched in step 2 — that one reviewed the code, this one reviews your review.
 8. **Emit** — open with the `## Gate Evidence` block (see Output Format), which records what steps 4–7 changed.
 
 If you reach step 8 with gate todos still open, you skipped the part that makes the review trustworthy. Stop and close them.
@@ -76,6 +76,8 @@ Count meaningful LOC (exclude generated files, lockfiles, snapshots), then spawn
 | **Small** (<100 LOC) | Language agent only |
 | **Medium** (100-250 LOC) | Language agent + truth-verifier + ai-spray-detector |
 | **Large** (>250 LOC) | All: language + truth-verifier + ai-spray-detector + adversarial-reviewer + test-automator (REVIEW MODE) + pattern-conformance + duplicate-code-detector. Add security-auditor for production/security-sensitive code. |
+
+The `truth-verifier` here reviews the **code**. It is a different job from the Self-Audit Gate's `truth-verifier`, which reviews your **drafted review** at step 7 — that one always runs, even for Small PRs that dispatch no agents here. Do not let one stand in for the other.
 
 ### Language Agent Selection
 
@@ -170,7 +172,7 @@ When `gh` isn't available (offline, sandbox, no network), fall back to linguisti
 
 ### Gate Evidence (REQUIRED — both modes, emit first)
 
-Every review opens with this block, before the scorecard. It records what the gate todos actually changed — it is a log of work done, not a substitute for doing it. Fill each row from the real edits and the real verification; a row you can't fill from actual work means that gate todo isn't closed yet, so go finish it. Invented evidence is a Principle 0 violation and worse than admitting the step was skipped.
+Every review opens with this block, before the scorecard. The Frame/Humanize/Tighten lines say what you changed. The **Audit** line is the Self-Audit Gate agent's final verdict table, pasted verbatim — that pasted table, not your prose, is what certifies the review. An Audit line you wrote yourself instead of copying from an agent's return means the gate did not run, so go run it.
 
 ```markdown
 ## Gate Evidence
@@ -178,10 +180,11 @@ Every review opens with this block, before the scorecard. It records what the ga
 - **Frame**: [what changed — e.g. "led with the data-loss risk; cut 3 praise openers"]
 - **Humanize**: [what changed — e.g. "removed 2 'Furthermore,'; broke up 4 uniform sentences"]
 - **Tighten (concise/evergreen/useful)**: [what changed — e.g. "dropped 1 comment that didn't change next action; removed 'the new code'"]
-- **Verify**: [the verdict — quote truth-verifier's result for medium+, or name the lines re-checked for small reviews; "clean after N iteration(s)" plus what was flagged and how it resolved]
+- **Audit** (truth-verifier on the drafted review, N iteration(s) to CLEAN):
+  [paste the agent's final per-comment verdict table here, verbatim, ending in VERDICT: CLEAN]
 ```
 
-The Refinement Pass and Truth Verification Loop sections below define each step.
+The Refinement Pass and Self-Audit Gate sections below define each step.
 
 ### Scorecard (both modes)
 
@@ -304,23 +307,28 @@ Run each piece through three passes, in order. These are quick in-place self-edi
 
 In other-PR mode, leave structural elements verbatim: the `ACTION:` line, `### \`path\`` headers, `**L<n>**` markers, code excerpts, and the `_Reviewed by Claude on my behalf._` disclaimer at the end of Overall.
 
-Why this matters: in other-PR mode the comment lands in another engineer's PR with your name on it; in own-code mode tight, evergreen feedback is what you act on. Framing, humanizing, and tightening are what separate feedback that gets acted on from feedback that gets skimmed.
+Why this matters: in other-PR mode the comment lands in another engineer's PR with your name on it; in own-code mode tight, evergreen feedback is what you act on. Framing, humanizing, and tightening are what separate feedback that gets acted on from feedback that gets skimmed. Do this work for real — the Self-Audit Gate below scores each comment on framing, markers, and evergreen-ness, so a refinement you only claimed to do comes back flagged.
 
-### Truth Verification Loop (REQUIRED — both modes)
+### Self-Audit Gate (REQUIRED — both modes, dispatch a subagent every review)
 
-After refining, verify every claim is factually accurate before it's emitted — both modes, every review. The *mechanism* scales with size so it stays proportionate; the verification itself never gets skipped:
+This is the step that keeps getting faked, so it is built to be un-fakeable. You drafted the review, so you cannot also be the one who certifies it: at the tail of a long review you will grade yourself generously, do some in-place wording, and write a plausible Gate Evidence block without doing the work. The certification therefore comes from a **separate agent that takes your drafted review as its input**. Its returned verdict — not your assertion — is the gate.
 
-- **Small reviews (<100 LOC):** verify inline. Re-read each cited line against the code and confirm the comment's claim actually holds there. No subagent needed for this volume.
-- **Medium+ reviews (≥100 LOC):** dispatch the `truth-verifier` agent (it's already in your Agent Dispatch at these sizes) against the changed code with the refined feedback.
+**This is NOT the `truth-verifier` you may have dispatched in Agent Dispatch.** That one reviewed the *code*. This one reviews *your drafted review*: its input is your comment block, not the diff. Reusing the dispatch-time run does not satisfy this step — that exact substitution is the failure this gate exists to stop. Dispatch a fresh verifier, every review, regardless of LOC. One subagent call is trivial next to posting a false claim into someone's PR under your name (other-PR mode) or acting on wrong feedback (own-code mode).
 
-Either mechanism applies the same check:
+Dispatch `truth-verifier` with this handoff:
 
-- **Problem**: Check every claim against the code — at PR HEAD in other-PR mode, against the reviewed files/working tree in own-code mode. Flag any feedback that misreads the code, asserts a bug that isn't real, cites a line that doesn't match its excerpt, or states an unverified assumption as fact.
-- **Done when**: Each claim is either confirmed against the code or flagged with the specific inaccuracy and evidence.
+- **Input**: your full drafted review (the comment block in other-PR mode; the scorecard prose + issues in own-code mode) AND the changed code (PR HEAD / working tree).
+- **Audit every comment on five axes and return a per-comment verdict:**
+  1. **Accurate** — does the claim hold at the cited line? Flag misreads, non-bugs asserted as bugs, excerpts that don't match their line number, assumptions stated as fact.
+  2. **Framed (BLUF)** — does it lead with the action or risk, not throat-clearing?
+  3. **No AI markers** — rigid transitions, hedging, em-dash pile-ups, AI-overused vocab?
+  4. **Evergreen** — any temporal language ("recently", "the new code", "now")?
+  5. **Useful** — does it change the reader's next action, or should it be dropped?
+- **Return format**: one row per comment — `claim | accurate | framed | markers | evergreen | useful | fix needed` — ending in `VERDICT: CLEAN` or `VERDICT: <N> items need fixing`.
 
-Iterate: fix or drop every flagged item, then verify the corrected feedback again. Repeat until no inaccuracies remain. Nothing is emitted before it survives a clean pass — in other-PR mode that gates persistence and posting; in own-code mode it gates presenting the scorecard. Quote the verdict (or, for inline verification, name the lines you re-checked) in the Gate Evidence block.
+Iterate: fix or drop every flagged item, then re-dispatch on the corrected review. Repeat until the agent returns `VERDICT: CLEAN`. Nothing is emitted before that — in other-PR mode it gates persistence and posting; in own-code mode it gates presenting the scorecard.
 
-This is Principle 0 applied to the output, not just the input. A framed, humanized comment that is also wrong is worse than no comment — it costs the reader time and your credibility. Refinement makes the feedback land; verification makes sure what lands is true.
+Paste the agent's final verdict table verbatim into the Gate Evidence block. If you are typing that table yourself instead of copying an agent's return, you did not run this step — and asserting you did is the Principle 0 violation this skill most wants to prevent. A framed, humanized comment that is also wrong is worse than no comment: it costs the reader time and your credibility.
 
 ### Persistence (other-PR mode only)
 
