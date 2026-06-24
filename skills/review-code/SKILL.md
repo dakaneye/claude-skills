@@ -9,18 +9,27 @@ Adversarial code review with language-specific expertise and multi-agent validat
 
 ## Review Procedure (follow in order, every review)
 
-Do not jump to output. Work these steps in sequence — steps 4-8 are the gate that produces trustworthy feedback, and they run in **both** modes:
+**First action of every review, before you gather anything: create a todo list (TodoWrite) with one item per gate step.** This is not bureaucracy — it's the fix for the failure this skill exists to prevent. The gate (frame, humanize, tighten, verify) lives at the *end*, after the scorecard already looks finished. The natural pull at that point is to emit and stop, so the gate is exactly what gets dropped. A drafted scorecard does not nag you; an open todo does. Create these now:
+
+- [ ] Draft scorecard + raw feedback
+- [ ] Refinement Pass — frame + humanize + tighten every comment
+- [ ] Truth Verification — confirm every claim against the code, until clean
+- [ ] Emit with Gate Evidence
+
+Do not mark the review complete while any gate todo is open.
+
+Then work the steps in order. **Everything you produce through step 3 is a draft, not the review.** The review does not exist until it has been framed, humanized, tightened, and verified — so there is nothing to emit yet, no matter how finished the scorecard looks. Both modes run the full gate.
 
 1. **Gather** context (PR/issue/files); pick the mode (see Mode Detection).
 2. **Dispatch** agents by size (see Agent Dispatch); run the adversarial checklist.
-3. **Score** the 15 dimensions; draft raw feedback.
-4. **Frame** every piece of feedback through the `frame` skill (BLUF — action first, evidence second).
-5. **Humanize** the framed prose through the `humanize` skill (strip AI markers).
-6. **Concise / evergreen / useful** — cut each comment to its shortest useful form; no temporal context; drop any comment that doesn't change the reader's next action.
-7. **Truth-verifier loop** — spawn `truth-verifier` against the code; fix or drop every flagged item; re-run until it finds zero inaccuracies. Count the iterations.
-8. **Emit** — the review output MUST include a `## Gate Evidence` block (see Output Format) proving steps 4-7 ran. A review without it is incomplete; do not present it.
+3. **Score** the 15 dimensions; draft raw feedback. *(Draft — keep going; close no todos.)*
+4. **Frame** every comment — BLUF, action first (Refinement Pass).
+5. **Humanize** the framed prose — strip AI markers (Refinement Pass).
+6. **Tighten** — concise, evergreen, useful; drop anything that doesn't change the reader's next action (Refinement Pass).
+7. **Verify** every claim against the code (Truth Verification Loop); fix or drop what's flagged; repeat until clean.
+8. **Emit** — open with the `## Gate Evidence` block (see Output Format), which records what steps 4–7 changed.
 
-Steps 4-6 are detailed in the Refinement Pass section; step 7 in the Truth Verification Loop section. If you reach step 8 without having done 4-7, stop and do them.
+If you reach step 8 with gate todos still open, you skipped the part that makes the review trustworthy. Stop and close them.
 
 ## Usage
 ```sh
@@ -161,18 +170,18 @@ When `gh` isn't available (offline, sandbox, no network), fall back to linguisti
 
 ### Gate Evidence (REQUIRED — both modes, emit first)
 
-Every review MUST open with this block, before the scorecard. It is the proof that procedure steps 4-7 ran. If you cannot fill a row honestly, you have not done that step — go do it. A review missing this block, or with a row left as a placeholder, is incomplete; do not present it.
+Every review opens with this block, before the scorecard. It records what the gate todos actually changed — it is a log of work done, not a substitute for doing it. Fill each row from the real edits and the real verification; a row you can't fill from actual work means that gate todo isn't closed yet, so go finish it. Invented evidence is a Principle 0 violation and worse than admitting the step was skipped.
 
 ```markdown
 ## Gate Evidence
 
-- **Frame** (`frame` skill): [what changed — e.g. "led with the data-loss risk; cut 3 praise openers"]
-- **Humanize** (`humanize` skill): [what changed — e.g. "removed 2 'Furthermore,'; broke up 4 uniform sentences"]
-- **Concise/evergreen/useful**: [what changed — e.g. "dropped 1 comment that didn't change next action; removed 'the new code'"]
-- **Truth-verifier**: PASS after N iteration(s) — [what it flagged and how it resolved, or "clean on first pass"]
+- **Frame**: [what changed — e.g. "led with the data-loss risk; cut 3 praise openers"]
+- **Humanize**: [what changed — e.g. "removed 2 'Furthermore,'; broke up 4 uniform sentences"]
+- **Tighten (concise/evergreen/useful)**: [what changed — e.g. "dropped 1 comment that didn't change next action; removed 'the new code'"]
+- **Verify**: [the verdict — quote truth-verifier's result for medium+, or name the lines re-checked for small reviews; "clean after N iteration(s)" plus what was flagged and how it resolved]
 ```
 
-The Refinement Pass and Truth Verification Loop sections below define each step. Fill each row from what you actually did — invented evidence is a Principle 0 violation and worse than admitting the step was skipped.
+The Refinement Pass and Truth Verification Loop sections below define each step.
 
 ### Scorecard (both modes)
 
@@ -287,11 +296,11 @@ You MUST refine every piece of feedback before it's emitted — this is not opti
 - **Other-PR mode**: the GitHub-postable comment block — the full `## Overall` section and the narrative text after each code excerpt under `## File Comments`.
 - **Own-code mode**: the scorecard's prose — the `Evidence` column entries and the `## Critical Issues (Blockers)`, `## Major Issues`, and `## Suggestions` sections.
 
-Run each piece through three passes, in order:
+Run each piece through three passes, in order. These are quick in-place self-edits — you don't need to leave the review and spin up another skill to do them. The operative rules are inlined here; the `frame` and `humanize` skills hold the full method if you want depth on a tricky comment.
 
-1. **Frame** — run it through the `frame` skill (SCQA/BLUF). Lead with what the reader must act on, then the evidence. A review comment is upward-style communication to a busy reader: the fix or the risk goes first, the supporting detail second. Cut throat-clearing.
-2. **Humanize** — run the framed prose through the `humanize` skill to strip AI markers: rigid transitions ("Furthermore,", "Moreover,"), em-dash overuse, hedging ("might", "could", "possibly"), uniform sentence length. These make feedback feel generic and harder to act on.
-3. **Edit for concision** — cut every comment to the shortest form that stays concise, evergreen, and useful. Evergreen means no temporal context ("recently changed", "the new code") — the comment must read correctly months later. Useful means it changes the reader's next action; if it doesn't, drop it.
+1. **Frame (BLUF)** — lead with what the reader must act on, then the evidence. The fix or the risk goes in the first sentence; supporting detail second. Cut throat-clearing ("I noticed that", "It seems like", "One thing to consider"). A review comment is upward communication to a busy reader.
+2. **Humanize (strip AI markers)** — delete rigid transitions ("Furthermore,", "Moreover,", "Additionally,"); break up runs of uniform sentence length; cut hedging ("might", "could", "possibly", "it may be worth") unless the uncertainty is real and load-bearing; thin out em-dash pile-ups; drop AI-overused vocab (delve, leverage, robust, comprehensive, crucial, seamless). These markers make feedback feel generic and easier to skim past.
+3. **Tighten (concise / evergreen / useful)** — cut every comment to its shortest form. Evergreen: no temporal context ("recently changed", "the new code", "now") — it must read correctly months later. Useful: it changes the reader's next action; if it doesn't, delete it.
 
 In other-PR mode, leave structural elements verbatim: the `ACTION:` line, `### \`path\`` headers, `**L<n>**` markers, code excerpts, and the `_Reviewed by Claude on my behalf._` disclaimer at the end of Overall.
 
@@ -299,12 +308,17 @@ Why this matters: in other-PR mode the comment lands in another engineer's PR wi
 
 ### Truth Verification Loop (REQUIRED — both modes)
 
-After refining, you MUST verify the feedback is factually accurate before it's emitted — in both modes, every time. Spawn the `truth-verifier` agent against the changed code with the refined feedback:
+After refining, verify every claim is factually accurate before it's emitted — both modes, every review. The *mechanism* scales with size so it stays proportionate; the verification itself never gets skipped:
+
+- **Small reviews (<100 LOC):** verify inline. Re-read each cited line against the code and confirm the comment's claim actually holds there. No subagent needed for this volume.
+- **Medium+ reviews (≥100 LOC):** dispatch the `truth-verifier` agent (it's already in your Agent Dispatch at these sizes) against the changed code with the refined feedback.
+
+Either mechanism applies the same check:
 
 - **Problem**: Check every claim against the code — at PR HEAD in other-PR mode, against the reviewed files/working tree in own-code mode. Flag any feedback that misreads the code, asserts a bug that isn't real, cites a line that doesn't match its excerpt, or states an unverified assumption as fact.
 - **Done when**: Each claim is either confirmed against the code or flagged with the specific inaccuracy and evidence.
 
-Iterate: fix or drop every flagged item, then re-run `truth-verifier` on the corrected feedback. Repeat until it finds no inaccuracies. Nothing is emitted before it survives a clean truth-verifier pass — in other-PR mode that gates persistence and posting; in own-code mode it gates presenting the scorecard.
+Iterate: fix or drop every flagged item, then verify the corrected feedback again. Repeat until no inaccuracies remain. Nothing is emitted before it survives a clean pass — in other-PR mode that gates persistence and posting; in own-code mode it gates presenting the scorecard. Quote the verdict (or, for inline verification, name the lines you re-checked) in the Gate Evidence block.
 
 This is Principle 0 applied to the output, not just the input. A framed, humanized comment that is also wrong is worse than no comment — it costs the reader time and your credibility. Refinement makes the feedback land; verification makes sure what lands is true.
 
