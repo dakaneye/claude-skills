@@ -5,37 +5,163 @@
     {
       "id": 0,
       "prompt": "I'm trying to decide between Claude Code, Aider, and Codex for our team's daily coding work. We care about Python refactors and bug fixes on our Django monolith. Can you help me run a fair comparison?",
-      "expected_output": "Recommends starting with 3-5 tasks drawn from real workload on the Django monolith (not toy examples), each as a YAML with name/description/repo/pinned commit/files/prompt/judge. Insists on pinning the commit so the comparison is reproducible across days. Each task gets at least one deterministic judge — pytest or build command — before any LLM judge is added. Runs N=3 trials minimum for each agent to capture consistency. Reports pass rate + cost + time + consistency, not pass rate alone. Warns that a 95%-at-10x-cost agent may not be the right answer."
+      "expected_output": "Recommends starting with 3-5 tasks drawn from real workload on the Django monolith (not toy examples), each as a YAML with name/description/repo/pinned commit/files/prompt/judge. Insists on pinning the commit so the comparison is reproducible across days. Each task gets at least one deterministic judge — pytest or build command — before any LLM judge is added. Runs N=3 trials minimum for each agent to capture consistency. Reports pass rate + cost + time + consistency, not pass rate alone. Warns that a 95%-at-10x-cost agent may not be the right answer.",
+      "assertions": [
+        {
+          "text": "recommends drawing tasks from real workload, not toy examples",
+          "keywords": ["real workload", "real work", "not toy", "actual", "representative"]
+        },
+        {
+          "text": "requires pinning commits for reproducibility",
+          "keywords": ["pin", "pinned", "commit", "reproducible"]
+        },
+        {
+          "text": "requires at least one deterministic judge per task",
+          "keywords": ["deterministic", "pytest", "build", "command"]
+        },
+        {
+          "text": "specifies N=3 or more trials minimum",
+          "keywords": ["N=3", "3 trials", "3 runs", "multiple trials", "at least 3"]
+        },
+        {
+          "text": "reports more than pass rate alone (cost, time, consistency)",
+          "keywords": ["cost", "consistency", "time"]
+        }
+      ]
     },
     {
       "id": 1,
       "prompt": "I just rewrote the /prompt skill's iteration 2 reasoning evals. How do I prove the new version didn't regress anything?",
-      "expected_output": "Treats this as skill regression testing. Baseline = the previous version's pass rate on the same evals. New version must match or beat the baseline on both pass rate and consistency. Recommends running the evals N=3 (or more) trials under agent-eval to measure variance in the new version, not just a single pass. Flags that any drop in consistency (e.g. 10/10 → 8/10) is a regression even if pass rate is unchanged. Points at the skill's own evals/evals.json as the task source — don't write new test cases for a regression run, use the ones that existed."
+      "expected_output": "Treats this as skill regression testing. Baseline = the previous version's pass rate on the same evals. New version must match or beat the baseline on both pass rate and consistency. Recommends running the evals N=3 (or more) trials under agent-eval to measure variance in the new version, not just a single pass. Flags that any drop in consistency (e.g. 10/10 → 8/10) is a regression even if pass rate is unchanged. Points at the skill's own evals/evals.json as the task source — don't write new test cases for a regression run, use the ones that existed.",
+      "assertions": [
+        {
+          "text": "frames the work as skill regression testing against a baseline",
+          "keywords": ["regression", "baseline", "previous version", "compare"]
+        },
+        {
+          "text": "requires multi-trial runs (N>=3) to capture variance",
+          "keywords": ["N=3", "trials", "runs", "variance", "multiple"]
+        },
+        {
+          "text": "uses the skill's existing evals.json rather than writing new cases",
+          "keywords": ["evals.json", "existing", "same evals", "reuse"]
+        },
+        {
+          "text": "treats a consistency drop as a regression even at same pass rate",
+          "keywords": ["consistency", "drop", "regression"]
+        }
+      ]
     },
     {
       "id": 2,
       "prompt": "My system prompt works most of the time but occasionally produces garbage. How do I measure how bad the variance actually is?",
-      "expected_output": "This is variance analysis. Recommends running the same task N=10 times (not 3 — for variance you want a larger N) under agent-eval and looking at consistency score, not pass rate alone. If 7/10 trials pass, the prompt has 70% consistency — often unacceptable for production. Suggests isolating which part of the task triggers the failures by slicing the test cases (maybe the variance only shows up on edge cases). Does NOT recommend 'just re-run if it fails' as a fix — that hides the problem instead of measuring it."
+      "expected_output": "This is variance analysis. Recommends running the same task N=10 times (not 3 — for variance you want a larger N) under agent-eval and looking at consistency score, not pass rate alone. If 7/10 trials pass, the prompt has 70% consistency — often unacceptable for production. Suggests isolating which part of the task triggers the failures by slicing the test cases (maybe the variance only shows up on edge cases). Does NOT recommend 'just re-run if it fails' as a fix — that hides the problem instead of measuring it.",
+      "assertions": [
+        {
+          "text": "recommends a larger sample size (N=10 or more) for variance",
+          "keywords": ["N=10", "10 trials", "10 runs", "larger N", "10 times"]
+        },
+        {
+          "text": "uses consistency score as the primary signal, not pass rate alone",
+          "keywords": ["consistency", "consistency score"]
+        },
+        {
+          "text": "rejects 'just re-run on failure' as a fix",
+          "keywords": ["re-run", "retry", "rerun", "mask", "hide", "not a fix"]
+        },
+        {
+          "text": "suggests isolating which inputs trigger the variance",
+          "keywords": ["isolate", "slice", "edge case", "narrow", "which"]
+        }
+      ]
     },
     {
       "id": 3,
       "prompt": "Claude Sonnet 4.6 just came out. Before I switch my default model, I want to confirm nothing regresses. What's the play?",
-      "expected_output": "Model upgrade validation. Re-run the existing regression suite (the user's task YAMLs with pinned commits) against both the old and new model. Compare pass rate AND consistency between the two — a new model with the same pass rate but lower consistency is a downgrade. Warns about non-deterministic sampling: even with the same model, running N=1 per side is meaningless; use N=3 or N=5. Recommends keeping the old model as a fallback until the new model has shown stable results over at least one full suite run. Does NOT suggest A/B'ing in production as the first test."
+      "expected_output": "Model upgrade validation. Re-run the existing regression suite (the user's task YAMLs with pinned commits) against both the old and new model. Compare pass rate AND consistency between the two — a new model with the same pass rate but lower consistency is a downgrade. Warns about non-deterministic sampling: even with the same model, running N=1 per side is meaningless; use N=3 or N=5. Recommends keeping the old model as a fallback until the new model has shown stable results over at least one full suite run. Does NOT suggest A/B'ing in production as the first test.",
+      "assertions": [
+        {
+          "text": "re-runs the existing regression suite against both old and new model",
+          "keywords": ["regression suite", "both", "old and new", "compare", "existing"]
+        },
+        {
+          "text": "compares pass rate AND consistency, not pass rate alone",
+          "keywords": ["consistency", "pass rate"]
+        },
+        {
+          "text": "requires more than N=1 per side",
+          "keywords": ["N=3", "N=5", "multiple", "not N=1", "meaningless"]
+        },
+        {
+          "text": "rejects A/B testing in production as the first test",
+          "keywords": ["production", "A/B", "fallback", "first"]
+        }
+      ]
     },
     {
       "id": 4,
       "prompt": "Can you write me a quick task YAML that checks if an agent can add input validation to a Flask endpoint?",
-      "expected_output": "Produces a well-formed YAML with name, description, repo, pinned commit, files (the specific Flask route file), prompt (concrete instructions naming the validation requirements), and judge. The judge section MUST include at least one deterministic judge — either pytest running validation tests or a command that curls the endpoint with bad input and checks for a 400 response. Includes an optional grep judge as a secondary signal (e.g. looking for a validation library import) but does not rely on grep alone. Does not use only an LLM judge — that would violate the skill's 'at least one deterministic judge per task' rule."
+      "expected_output": "Produces a well-formed YAML with name, description, repo, pinned commit, files (the specific Flask route file), prompt (concrete instructions naming the validation requirements), and judge. The judge section MUST include at least one deterministic judge — either pytest running validation tests or a command that curls the endpoint with bad input and checks for a 400 response. Includes an optional grep judge as a secondary signal (e.g. looking for a validation library import) but does not rely on grep alone. Does not use only an LLM judge — that would violate the skill's 'at least one deterministic judge per task' rule.",
+      "assertions": [
+        {
+          "text": "YAML pins a specific commit for reproducibility",
+          "keywords": ["commit:", "pinned", "pin"]
+        },
+        {
+          "text": "judge section includes at least one deterministic judge (pytest or command)",
+          "keywords": ["pytest", "type: command", "type: pytest", "deterministic"]
+        },
+        {
+          "text": "does not rely on LLM judge alone",
+          "keywords": ["not LLM alone", "secondary", "alongside", "deterministic"]
+        },
+        {
+          "text": "YAML includes the required structure (name, repo, files, prompt, judge)",
+          "keywords": ["name:", "repo:", "files:", "prompt:", "judge:"]
+        }
+      ]
     },
     {
       "id": 5,
       "prompt": "I have a flaky task — it passes like 60% of the time. Should I just lower my pass threshold or is something actually wrong?",
-      "expected_output": "Rejects lowering the threshold. 60% pass rate on a task that should be deterministic is a signal that either (a) the agent is non-deterministic in a way that matters for this task, (b) the judge is flaky, or (c) the prompt is ambiguous. Recommends: first check if the judge itself is flaky by running it N times on a known-good solution; then check if the prompt has multiple valid interpretations; then consider whether the task is too open-ended to be evaluable. Lowering the threshold masks the problem — the answer is to fix the task or pick a different task. Consistency below 100% on deterministic tasks is a bug, not a number to accommodate."
+      "expected_output": "Rejects lowering the threshold. 60% pass rate on a task that should be deterministic is a signal that either (a) the agent is non-deterministic in a way that matters for this task, (b) the judge is flaky, or (c) the prompt is ambiguous. Recommends: first check if the judge itself is flaky by running it N times on a known-good solution; then check if the prompt has multiple valid interpretations; then consider whether the task is too open-ended to be evaluable. Lowering the threshold masks the problem — the answer is to fix the task or pick a different task. Consistency below 100% on deterministic tasks is a bug, not a number to accommodate.",
+      "assertions": [
+        {
+          "text": "rejects lowering the pass threshold as the fix",
+          "keywords": ["lower", "threshold", "mask", "hide", "reject", "don't"]
+        },
+        {
+          "text": "investigates judge flakiness as a possible root cause",
+          "keywords": ["judge", "flaky", "judge itself"]
+        },
+        {
+          "text": "investigates prompt ambiguity or task scope as a possible root cause",
+          "keywords": ["prompt", "ambiguous", "ambiguity", "open-ended", "interpretation"]
+        },
+        {
+          "text": "frames sub-100% consistency on deterministic tasks as a bug",
+          "keywords": ["bug", "consistency", "deterministic", "100%"]
+        }
+      ]
     },
     {
       "id": 6,
       "prompt": "Should I use agent-eval to test whether my new unit tests work?",
-      "expected_output": "No — that's a misuse. Agent-eval measures agents/prompts/skills as non-deterministic systems. For deterministic code with deterministic tests, the normal test runner (pytest, go test, etc.) is the right tool and has zero overhead. Agent-eval's value comes from the git-worktree isolation + N-trial consistency measurement, neither of which adds anything for regular unit tests. Cites the skill's 'When NOT to use agent-eval' section explicitly."
+      "expected_output": "No — that's a misuse. Agent-eval measures agents/prompts/skills as non-deterministic systems. For deterministic code with deterministic tests, the normal test runner (pytest, go test, etc.) is the right tool and has zero overhead. Agent-eval's value comes from the git-worktree isolation + N-trial consistency measurement, neither of which adds anything for regular unit tests. Cites the skill's 'When NOT to use agent-eval' section explicitly.",
+      "assertions": [
+        {
+          "text": "declines — agent-eval is the wrong tool for deterministic unit tests",
+          "keywords": ["No", "misuse", "wrong tool", "not the right", "shouldn't"]
+        },
+        {
+          "text": "recommends the normal test runner (pytest, go test, etc.)",
+          "keywords": ["pytest", "go test", "test runner", "normal"]
+        },
+        {
+          "text": "cites agent-eval's value as measuring non-deterministic systems",
+          "keywords": ["non-deterministic", "consistency", "N trials", "variance"]
+        }
+      ]
     }
   ]
 }
