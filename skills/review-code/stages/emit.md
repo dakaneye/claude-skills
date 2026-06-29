@@ -47,10 +47,15 @@ didn't finish — return there rather than rewriting here.
 
 ### 3. Persist (other-PR mode only)
 
-Save both artifacts so the review survives the session:
+Save both artifacts in **the artifacts directory the run was given** — the same
+absolute path Stage 1 wrote to. Do not relocate them under `~/.claude` if the run
+supplied a different path. The two files are:
 
-- `~/.claude/code-reviews/<owner>-<repo>/<YYYY-MM-DD>/<pr#>-<slug>/review.md` — full scorecard
-- `~/.claude/code-reviews/<owner>-<repo>/<YYYY-MM-DD>/<pr#>-<slug>/comment.md` — postable comment
+- `<artifacts-dir>/review.md` — full scorecard
+- `<artifacts-dir>/comment.md` — postable comment
+
+For a standalone interactive run with no directory supplied, that path is
+`~/.claude/code-reviews/<owner>-<repo>/<YYYY-MM-DD>/<pr#>-<slug>/`.
 
 Slug: derived from the PR title — lowercased, hyphenated, conventional-commit
 prefix dropped (`feat(auth):` → `auth-`), truncated to ~40 chars. Match

@@ -13,9 +13,13 @@ review lives in how well you dispatch and cross-check them.
 
 - A PR URL, file, or directory to review.
 - The mode (other-PR / own-code) — see SKILL.md § Mode Detection.
-- The artifacts directory to persist into (other-PR mode): the caller supplies
-  it, or default to
-  `~/.claude/code-reviews/<owner>-<repo>/<YYYY-MM-DD>/<pr#>-<slug>/`.
+- The artifacts directory to persist into (other-PR mode). **The invocation
+  supplies an absolute path — write there, exactly as given, and nowhere else.**
+  Only when running standalone with no directory provided (an interactive
+  `/review-code`), default to
+  `~/.claude/code-reviews/<owner>-<repo>/<YYYY-MM-DD>/<pr#>-<slug>/`. An
+  orchestrated run is given its path and must not fall back to this default —
+  some runtimes block writes under `~/.claude`.
 
 ## Output
 
