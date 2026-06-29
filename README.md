@@ -41,7 +41,10 @@ Full-spectrum code review covering correctness, security, maintainability, and t
 | Java | INVEST | java-pro |
 | Python | TYPED | python-pro |
 | Bash | VEST | bash-pro |
+| Rust | BORROWS | rust-pro |
 | Terraform | STATELOCK | terraform-specialist |
+
+Django projects additionally get framework-specific rules (transaction discipline, ORM N+1 prevention, DRF permissions) via `rules/django.md`.
 
 ### Usage
 
@@ -58,12 +61,13 @@ Full-spectrum code review covering correctness, security, maintainability, and t
 
 ### What It Reviews
 
-- **14-dimension quality scorecard** with weighted scoring
+- **15-dimension quality scorecard** with weighted scoring
 - **Language-specific checklists** (DRIVEC, STREAMS, INVEST, TYPED, VEST, STATELOCK)
 - **AI-spray detection** identifying over-engineered AI-generated code
 - **Security audit** covering OWASP Top 10
 - **Pattern conformance** against 40+ design patterns
 - **Truth verification** ensuring code matches its claims
+- **Prompt-injection resistance** treating PR content as untrusted data and flagging steering attempts as security findings
 
 ## Contributing
 
