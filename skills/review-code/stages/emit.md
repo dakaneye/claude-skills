@@ -33,8 +33,8 @@ Other-PR mode `comment.md`:
 - [ ] First line is `ACTION: <approve|comment|request-changes>`, mapped from the scorecard recommendation.
 - [ ] `## Overall` is standalone-readable and does not restate inline comments.
 - [ ] Every concern in Overall and every inline comment carries a Conventional Comments label.
-- [ ] Every posted label is one of `issue`, `issue (non-blocking)`, or `question`, or is a `suggestion` on the SAME LINE as its issue. **No `nitpick`, `note`, or `praise`** anywhere in the posted comment, and no praise prose.
-- [ ] No `**suggestion:**` starts a line of its own — only the first line after each `**L<n>**` anchor posts, so a fix written on its own line reaches nobody. Fold it into its issue's line.
+- [ ] Every posted label is one of `issue`, `issue (non-blocking)`, or `question`, or is a `suggestion` attached to an issue (same line, or directly beneath it). **No `nitpick`, `note`, or `praise`** anywhere in the posted comment, and no praise prose.
+- [ ] No `**suggestion:**` stands alone under an anchor with no `issue` above it — with nothing to fix it is a preference, and it will not post.
 - [ ] `## Overall`'s summary is at most 3 sentences and does not open by appraising what the change gets right — that is praise without the label. Count the sentences; if it runs long, cut it here and move the appraisal to `review.md`.
 - [ ] `## Overall` carries at most 3 labeled items.
 - [ ] `## File Comments` carries at most 6 inline comments in total.

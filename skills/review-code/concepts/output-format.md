@@ -81,12 +81,11 @@ Posted labels:
   see `stages/find.md` § Pre-Existing Issues. Never drop one to save space.
 - **question**: a concern where you're unsure it's relevant. The right default
   when you're new to a codebase or unsure of intent.
-- **suggestion**: only as an `issue`'s fix, and **on the same line as that
-  issue** — `**issue:** X breaks when Y. **suggestion:** use Z instead.` A
-  standalone suggestion with no issue attached does not post. The same-line rule
-  is load-bearing, not stylistic: a downstream parser reads one line per `**L<n>**`
-  anchor, so a fix written on its own line is silently dropped and the author
-  gets the problem without the answer.
+- **suggestion**: only as an `issue`'s fix — ideally on the same line as that
+  issue (`**issue:** X breaks when Y. **suggestion:** use Z instead.`), or on its
+  own line directly beneath it, where it is folded back into that issue. Either
+  reads fine to the author. What does **not** post is a standalone suggestion with
+  no issue above it: with nothing to fix, it is a preference.
 
 Never posted — `review.md` only:
 - **nitpick**: preference-based. Never posts.
