@@ -69,20 +69,46 @@ summary's individual concerns and each inline comment). The format is
 teams require this explicitly (e.g., NetBoxLabs's PR Reviews onboarding doc).
 Even when not required, prefixes make a review faster to triage.
 
-Labels:
-- **issue**: a specific problem — pair with a **suggestion** when you have one
-- **question**: a potential concern where you're not sure if it's relevant; the right default when you're new to a codebase or unsure of intent
-- **suggestion**: a proposed improvement
-- **note**: making the author aware of something; implicitly non-blocking
-- **praise**: scorecard-only — do NOT use as a label in posted comments. Praise doesn't change the author's next action, so it pads the review without adding signal.
-- **nitpick**: preference-based; implicitly non-blocking
+**Only four things post.** A posted comment exists to change the author's next
+action; anything that doesn't is noise they have to sort. The rest still gets
+written down — it goes in `review.md`, which is your own record.
+
+Posted labels:
+- **issue**: a specific problem. Write the fix into the same comment
+  (`**issue:** X breaks when Y. Use Z instead.`) rather than as a second comment.
+- **issue (non-blocking)**: a real defect that shouldn't gate the merge — most
+  often a pre-existing bug in code the diff touches. This lane is load-bearing;
+  see `stages/find.md` § Pre-Existing Issues. Never drop one to save space.
+- **question**: a concern where you're unsure it's relevant. The right default
+  when you're new to a codebase or unsure of intent.
+- **suggestion**: only as an `issue`'s fix, inside that issue's comment. A
+  standalone suggestion with no issue attached does not post.
+
+Never posted — `review.md` only:
+- **nitpick**: preference-based. Never posts.
+- **note**: an FYI with no action attached. Never posts.
+- **praise**: accurate but never actionable. Never posts.
 
 Decoration:
-- **(non-blocking)**: doesn't gate merge — add generously for `issue`/`suggestion` when the concern shouldn't hold up the PR
+- **(non-blocking)**: doesn't gate merge. It marks severity, not whether
+  something posts — a real defect posts either way.
 
 When unsure whether something is an `issue` or a `question`, prefer `question`.
 The PR author can correct your reading without anyone losing face, and you avoid
 asserting incorrect claims.
+
+**Budget.** A review the author reads in full beats a thorough one they skim.
+
+- `## Overall`: at most **3** labeled items, after the standalone-readable
+  summary. If you have more, you are duplicating inline comments or posting
+  things that belong in `review.md`.
+- `## File Comments`: at most **6** inline comments total, across all files.
+  When you have more than 6 candidates, keep them in this order — `issue`, then
+  `question` — and drop the tail.
+
+The budget is a ceiling, not a target. Three inline comments on a PR that has
+three problems is a complete review; padding to six is how a review becomes
+unreadable.
 
 **Don't duplicate inline comments in Overall.** Overall is for the
 standalone-readable summary — concerns that can't be anchored to a specific line

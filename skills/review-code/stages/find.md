@@ -126,6 +126,12 @@ Feedback categories:
 - **Minor**: Style, refactoring opportunities — CONSIDER
 - **Discussion**: Architecture decisions, alternatives
 
+**Blocker and Major post. Minor and Discussion go to `review.md` only** — into
+`## Suggestions`, where they stay on the record without spending the author's
+attention. The exception is a genuine defect: a real bug is Major or Blocker
+whatever its size, and a pre-existing one posts as `issue (non-blocking)` (see
+Pre-Existing Issues below). "Minor" describes preference, not severity.
+
 #### Pre-Existing Issues (don't bury a real bug)
 
 "Stay in scope" means don't gold-plate — don't demand refactors, abstractions,
@@ -133,7 +139,7 @@ or features the diff never set out to add. It does **not** mean staying silent
 about a genuine defect you can see in the code the diff touches. When you spot a
 real bug that predates this PR:
 
-- Report it as a **non-blocking follow-up**, clearly marked as pre-existing and outside this PR's scope — own-code mode: under `## Suggestions`; other-PR mode: a `note (non-blocking):` or `issue (non-blocking):` comment.
+- Report it as a **non-blocking follow-up**, clearly marked as pre-existing and outside this PR's scope — own-code mode: under `## Suggestions`; other-PR mode: an `issue (non-blocking):` comment. It must be `issue`, not `note`: `note` never posts, so routing a real defect there buries it.
 - Never downgrade or drop a real bug just because it's outside the diff. Surfacing it costs one line; burying it costs an incident.
 - The non-blocking lane is for real defects, not scope creep in disguise — still don't invent issues or pad with style nits.
 

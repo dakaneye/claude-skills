@@ -32,9 +32,11 @@ Do not emit an unaudited review.
 Other-PR mode `comment.md`:
 - [ ] First line is `ACTION: <approve|comment|request-changes>`, mapped from the scorecard recommendation.
 - [ ] `## Overall` is standalone-readable and does not restate inline comments.
-- [ ] Every concern in Overall and every inline comment carries a Conventional Comments label (`issue`/`question`/`suggestion`/`note`/`nitpick`).
-- [ ] **No `praise:` label** anywhere in the posted comment, and no praise prose.
-- [ ] The last line of `## Overall` is exactly `_Reviewed by Claude on my behalf._` — never omitted, reworded, or moved.
+- [ ] Every concern in Overall and every inline comment carries a Conventional Comments label.
+- [ ] Every posted label is one of `issue`, `issue (non-blocking)`, or `question`, or is a `suggestion` written inside an issue's comment. **No `nitpick`, `note`, or `praise`** anywhere in the posted comment, and no praise prose.
+- [ ] `## Overall` carries at most 3 labeled items.
+- [ ] `## File Comments` carries at most 6 inline comments in total.
+- [ ] The last line of `## Overall` starts with `_Reviewed by Claude on my behalf` — never omitted, reworded, or moved. An orchestrated skim pass may suffix it (`… — quick pass._`); nothing else may.
 - [ ] Each `### \`path\`` / `**L<n>**` is intact; structural elements untouched.
 
 `review.md` (both modes):
