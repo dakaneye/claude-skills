@@ -498,6 +498,14 @@
         {
           "text": "postable comment does not use the praise label inline",
           "keywords": ["!**praise:**", "!**praise (non-blocking):**"]
+        },
+        {
+          "text": "postable comment does not use the nitpick or note labels — neither changes the author's next action, so both stay in review.md",
+          "keywords": ["!**nitpick:**", "!**nitpick (non-blocking):**", "!**note:**", "!**note (non-blocking):**"]
+        },
+        {
+          "text": "a real pre-existing defect still posts as issue (non-blocking) rather than being floored out",
+          "keywords": ["issue (non-blocking)", "issue:"]
         }
       ]
     },
