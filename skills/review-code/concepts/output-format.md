@@ -99,9 +99,12 @@ asserting incorrect claims.
 
 **Budget.** A review the author reads in full beats a thorough one they skim.
 
-- `## Overall`: at most **3** labeled items, after the standalone-readable
-  summary. If you have more, you are duplicating inline comments or posting
-  things that belong in `review.md`.
+- `## Overall`: a summary of **at most 3 sentences**, then at most **3** labeled
+  items. If you have more items, you are duplicating inline comments or posting
+  things that belong in `review.md`. The sentence cap is the one that bites: an
+  opening paragraph appraising what the change gets right reads as generous and
+  costs the author the same attention as a nit — it is praise without the label,
+  and the no-praise rule covers it. Put that appraisal in `review.md`.
 - `## File Comments`: at most **6** inline comments total, across all files.
   When you have more than 6 candidates, keep them in this order — `issue`, then
   `question` — and drop the tail.
@@ -135,7 +138,7 @@ ACTION: <approve|comment|request-changes>
 
 ## Overall
 
-[Standalone summary. Lead with what's blocking, what's good, or the single most important thing the author needs to know if they read nothing else. Include concerns that can't be anchored to a specific line; gesture at inline comments without restating them.]
+[Standalone summary, AT MOST 3 SENTENCES. The single most important thing the author needs to know if they read nothing else, plus any concern that can't be anchored to a specific line. Gesture at inline comments without restating them. Do NOT open by cataloguing what's good — see the no-praise rule above; an assessment of what the change gets right belongs in review.md.]
 
 [For each concern raised here, prefix with a Conventional Comments label, e.g.:
 **question:** did you verify X end-to-end against Y?
