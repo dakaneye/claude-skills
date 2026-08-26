@@ -40,7 +40,10 @@ Leave structural elements verbatim: the `ACTION:` line, `### \`path\`` headers,
 disclaimer.
 
 **Everything through Stage 2 is a draft.** The review does not exist until it has
-been audited (Stage 3) and emitted (Stage 4). Both modes run all four stages.
+been audited (Stage 3) and emitted (Stage 4). Both modes run all four stages —
+the one exception is an orchestrator running an explicit skim pass, which may
+drop Stage 2 (prose polish) and pin the fleet to the language agent. Stages 1, 3,
+and 4 always run: a review that was never audited is not a review.
 
 ### Composed two ways
 
