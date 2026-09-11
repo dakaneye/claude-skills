@@ -95,6 +95,23 @@ issue, understand the broader feature/initiative, read files that import or call
 the changed code. The meaning of a code change depends on its context — a missing
 null check in a CLI tool is different from one in a payment API.
 
+### Two Axes: Standards and Spec
+Every other principle here judges the diff on **Standards** — is this good code?
+Run a second, independent axis: **Spec** — is this the code the originating issue
+asked for? The two fail differently. A clean, well-tested, idiomatic
+implementation of the wrong behavior passes every Standards check ever written.
+
+Name the spec source explicitly, in this order: an issue referenced in the commit
+messages or PR body (fetch it with `gh` or the Linear MCP), a spec path the user
+passed, or a design doc matching the branch. When none exists, say "no spec
+available" and report the Standards axis alone — a spec inferred from the diff can
+only ever agree with it.
+
+Judge the diff against that spec on three questions: does it do what was asked,
+does it do things that were *not* asked (scope creep), and does it leave part of
+the ask unimplemented. Report Spec findings separately from Standards findings, so
+the reader can see which kind of problem they have.
+
 ### Sequential Thinking: Structured Reasoning
 Work through the review systematically rather than reacting to the first thing
 you see. What is this code trying to accomplish? How does it fit the broader
