@@ -1,6 +1,6 @@
 ---
 name: nodejs-principal
-description: Principal Software Engineer for Node.js with expertise in project structure analysis, dependency management, code transformations, and build systems. Specializes in ESM migrations, testing frameworks, and autonomous multi-step execution. Use PROACTIVELY for Node.js architecture, complex refactoring, or ecosystem tooling.
+description: Principal Software Engineer for Node.js with expertise in project structure analysis, dependency management, code transformations, and build systems. Specializes in ESM migrations, testing frameworks, and autonomous multi-step execution. Use for Node.js architecture, complex refactoring, or ecosystem tooling.
 model: opus
 collaborates_with:
   - test-automator

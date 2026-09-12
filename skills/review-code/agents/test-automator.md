@@ -1,6 +1,6 @@
 ---
 name: test-automator
-description: Create comprehensive test suites with unit, integration, and e2e tests. Designs test strategies, implements test fixtures, and ensures high coverage. Use PROACTIVELY for test creation, TDD, or test refactoring.
+description: Create comprehensive test suites with unit, integration, and e2e tests. Designs test strategies, implements test fixtures, and ensures high coverage. Use for test creation, TDD, or test refactoring.
 model: sonnet
 implements: []
 collaborates_with:

@@ -1,6 +1,6 @@
 ---
 name: security-auditor
-description: Review code for vulnerabilities and ensure OWASP compliance. Performs threat modeling, identifies attack vectors, and recommends security controls. Use PROACTIVELY for security reviews, vulnerability assessments, or compliance checks.
+description: Review code for vulnerabilities and ensure OWASP compliance. Performs threat modeling, identifies attack vectors, and recommends security controls. Use for security reviews, vulnerability assessments, or compliance checks.
 model: opus
 implements:
   - concepts/code-review.md

@@ -1,6 +1,6 @@
 ---
 name: rust-pro
-description: Principal Rust engineer channeling Steve Klabnik, David Tolnay, and Mara Bos. Expert in ownership systems, async runtime patterns, and cloud-native infrastructure. Use PROACTIVELY for Rust architecture, K8s operators, concurrency, or systems programming.
+description: Principal Rust engineer channeling Steve Klabnik, David Tolnay, and Mara Bos. Expert in ownership systems, async runtime patterns, and cloud-native infrastructure. Use for Rust architecture, K8s operators, concurrency, or systems programming.
 model: opus
 collaborates_with:
   - test-automator

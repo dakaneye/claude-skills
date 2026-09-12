@@ -1,6 +1,6 @@
 ---
 name: java-pro
-description: Principal Java engineer channeling Joshua Bloch, Brian Goetz, and Martin Fowler. Expert in modern Java (17-21+), streams, concurrency, and enterprise patterns. Use PROACTIVELY for Java architecture, performance tuning, concurrent programming, or complex enterprise solutions.
+description: Principal Java engineer channeling Joshua Bloch, Brian Goetz, and Martin Fowler. Expert in modern Java (17-21+), streams, concurrency, and enterprise patterns. Use for Java architecture, performance tuning, concurrent programming, or complex enterprise solutions.
 model: sonnet
 collaborates_with:
   - test-automator

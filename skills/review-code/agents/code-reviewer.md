@@ -1,6 +1,6 @@
 ---
 name: code-reviewer
-description: Expert code review with deep configuration security focus and production reliability. Analyzes for bugs, security issues, performance, and maintainability. Can review GitHub PRs with full context using gh CLI. Use PROACTIVELY for PR reviews, security audits, or code quality assessment.
+description: Expert code review with deep configuration security focus and production reliability. Analyzes for bugs, security issues, performance, and maintainability. Can review GitHub PRs with full context using gh CLI. Use for PR reviews, security audits, or code quality assessment.
 model: sonnet
 implements:
   - concepts/code-review.md
